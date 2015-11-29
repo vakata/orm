@@ -1,0 +1,41 @@
+{
+    "name": "vakata/orm",
+    "description": "An ORM implementation",
+    "keywords": [
+        "vakata",
+        "orm"
+    ],
+    "homepage": "https://github.com/vakata/orm",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "vakata",
+            "email": "orm@vakata.com",
+            "homepage": "http://www.vakata.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php" : ">=5.4.0",
+        "vakata/database" : ">=1.0.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit" : "4.*",
+        "codeclimate/php-test-reporter": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "vakata\\orm\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "vakata\\orm\\test\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "psr2": "php-cs-fixer fix ./src",
+        "phpdoc": "phpDocumentor -d ./src -t ./docs"
+    }
+}
