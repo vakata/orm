@@ -21,11 +21,11 @@ before_install:
   - mysql -e "create database IF NOT EXISTS test;" -uroot
 
 script:
-  - vendor/bin/phpunit --coverage-text --coverage-clover=coverage.clover
+  - vendor/bin/phpunit
 
 after_script:
   - vendor/bin/test-reporter
 
 addons:
   code_climate:
-    repo_token: 243bfc6fa64b55321f63437f3723021a84b9e43f0c5dc75a1edec8b466fee955
+    repo_token: 8d4f6928f441c9b20a1cf458c7f54fa20f087c78ae3a49252a823f7243d6f086
