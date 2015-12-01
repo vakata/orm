@@ -50,32 +50,32 @@ class Table implements TableInterface
     }
 
     // relations
-    protected function getRelatedTable($to_table)
+    protected function getRelatedTable($toTable)
     {
-        if (!($to_table instanceof self)) {
-            if (!is_array($to_table)) {
-                $to_table = ['table' => $to_table];
+        if (!($toTable instanceof self)) {
+            if (!is_array($toTable)) {
+                $toTable = ['table' => $toTable];
             }
-            if (!isset($to_table['definition'])) {
-                $to_table['definition'] = null;
+            if (!isset($toTable['definition'])) {
+                $toTable['definition'] = null;
             }
-            if (is_array($to_table['definition'])) {
-                $to_table['definition'] = new TableDefinitionArray($to_table['table'], $to_table['definition']);
+            if (is_array($toTable['definition'])) {
+                $toTable['definition'] = new TableDefinitionArray($toTable['table'], $toTable['definition']);
             }
-            $to_table = new self($this->getDatabase(), $to_table['table'], $to_table['definition']);
+            $toTable = new self($this->getDatabase(), $toTable['table'], $toTable['definition']);
         }
 
-        return $to_table;
+        return $toTable;
     }
-    public function addAdvancedRelation($to_table, $name, array $keymap, $many = true, $pivot = null, array $map = [])
+    public function addAdvancedRelation($toTable, $name, array $keymap, $many = true, $pivot = null, array $map = [])
     {
         if (!count($keymap)) {
             throw new ORMException('No linking fields specified');
         }
-        $to_table = $this->getRelatedTable($to_table);
+        $toTable = $this->getRelatedTable($toTable);
         $this->relations[$name] = [
             'name' => $name,
-            'table' => $to_table,
+            'table' => $toTable,
             'keymap' => $keymap,
             'many' => (bool) $many,
             'pivot' => $pivot,
@@ -84,39 +84,39 @@ class Table implements TableInterface
 
         return $this;
     }
-    public function hasOne($to_table, $name = null, $to_table_column = null)
+    public function hasOne($toTable, $name = null, $toTableColumn = null)
     {
-        $to_table = $this->getRelatedTable($to_table);
-        $columns = $to_table->definition->getColumns();
+        $toTable = $this->getRelatedTable($toTable);
+        $columns = $toTable->definition->getColumns();
 
         $keymap = [];
-        if (!isset($to_table_column)) {
-            $to_table_column = [];
+        if (!isset($toTableColumn)) {
+            $toTableColumn = [];
         }
-        if (!is_array($to_table_column)) {
-            $to_table_column = [$to_table_column];
+        if (!is_array($toTableColumn)) {
+            $toTableColumn = [$toTableColumn];
         }
-        foreach ($this->definition->getPrimaryKey() as $k => $pk_field) {
+        foreach ($this->definition->getPrimaryKey() as $k => $pkField) {
             $key = null;
-            if (isset($to_table_column[$pk_field])) {
-                $key = $to_table_column[$pk_field];
-            } elseif (isset($to_table_column[$k])) {
-                $key = $to_table_column[$k];
+            if (isset($toTableColumn[$pkField])) {
+                $key = $toTableColumn[$pkField];
+            } elseif (isset($toTableColumn[$k])) {
+                $key = $toTableColumn[$k];
             } else {
-                $key = $this->definition->getName().'_'.$pk_field;
+                $key = $this->definition->getName().'_'.$pkField;
             }
             if (!in_array($key, $columns)) {
                 throw new ORMException('Missing foreign key mapping');
             }
-            $keymap[$pk_field] = $key;
+            $keymap[$pkField] = $key;
         }
 
         if (!isset($name)) {
-            $name = $to_table->definition->getName().'_'.implode('_', array_keys($keymap));
+            $name = $toTable->definition->getName().'_'.implode('_', array_keys($keymap));
         }
         $this->relations[$name] = [
             'name' => $name,
-            'table' => $to_table,
+            'table' => $toTable,
             'keymap' => $keymap,
             'many' => false,
             'pivot' => null,
@@ -125,39 +125,39 @@ class Table implements TableInterface
 
         return $this;
     }
-    public function hasMany($to_table, $name = null, $to_table_column = null)
+    public function hasMany($toTable, $name = null, $toTableColumn = null)
     {
-        $to_table = $this->getRelatedTable($to_table);
-        $columns = $to_table->definition->getColumns();
+        $toTable = $this->getRelatedTable($toTable);
+        $columns = $toTable->definition->getColumns();
 
         $keymap = [];
-        if (!isset($to_table_column)) {
-            $to_table_column = [];
+        if (!isset($toTableColumn)) {
+            $toTableColumn = [];
         }
-        if (!is_array($to_table_column)) {
-            $to_table_column = [$to_table_column];
+        if (!is_array($toTableColumn)) {
+            $toTableColumn = [$toTableColumn];
         }
-        foreach ($this->definition->getPrimaryKey() as $k => $pk_field) {
+        foreach ($this->definition->getPrimaryKey() as $k => $pkField) {
             $key = null;
-            if (isset($to_table_column[$pk_field])) {
-                $key = $to_table_column[$pk_field];
-            } elseif (isset($to_table_column[$k])) {
-                $key = $to_table_column[$k];
+            if (isset($toTableColumn[$pkField])) {
+                $key = $toTableColumn[$pkField];
+            } elseif (isset($toTableColumn[$k])) {
+                $key = $toTableColumn[$k];
             } else {
-                $key = $this->definition->getName().'_'.$pk_field;
+                $key = $this->definition->getName().'_'.$pkField;
             }
             if (!in_array($key, $columns)) {
                 throw new ORMException('Missing foreign key mapping');
             }
-            $keymap[$pk_field] = $key;
+            $keymap[$pkField] = $key;
         }
 
         if (!isset($name)) {
-            $name = $to_table->definition->getName().'_'.implode('_', array_keys($keymap));
+            $name = $toTable->definition->getName().'_'.implode('_', array_keys($keymap));
         }
         $this->relations[$name] = [
             'name' => $name,
-            'table' => $to_table,
+            'table' => $toTable,
             'keymap' => $keymap,
             'many' => true,
             'pivot' => null,
@@ -166,39 +166,39 @@ class Table implements TableInterface
 
         return $this;
     }
-    public function belongsTo($to_table, $name = null, $local_column = null)
+    public function belongsTo($toTable, $name = null, $localColumn = null)
     {
-        $to_table = $this->getRelatedTable($to_table);
+        $toTable = $this->getRelatedTable($toTable);
         $columns = $this->definition->getColumns();
 
         $keymap = [];
-        if (!isset($local_column)) {
-            $local_column = [];
+        if (!isset($localColumn)) {
+            $localColumn = [];
         }
-        if (!is_array($local_column)) {
-            $local_column = [$local_column];
+        if (!is_array($localColumn)) {
+            $localColumn = [$localColumn];
         }
-        foreach ($to_table->definition->getPrimaryKey() as $k => $pk_field) {
+        foreach ($toTable->definition->getPrimaryKey() as $k => $pkField) {
             $key = null;
-            if (isset($local_column[$pk_field])) {
-                $key = $local_column[$pk_field];
-            } elseif (isset($local_column[$k])) {
-                $key = $local_column[$k];
+            if (isset($localColumn[$pkField])) {
+                $key = $localColumn[$pkField];
+            } elseif (isset($localColumn[$k])) {
+                $key = $localColumn[$k];
             } else {
-                $key = $to_table->definition->getName().'_'.$pk_field;
+                $key = $toTable->definition->getName().'_'.$pkField;
             }
             if (!in_array($key, $columns)) {
                 throw new ORMException('Missing foreign key mapping');
             }
-            $keymap[$key] = $pk_field;
+            $keymap[$key] = $pkField;
         }
 
         if (!isset($name)) {
-            $name = $to_table->definition->getName().'_'.implode('_', array_keys($keymap));
+            $name = $toTable->definition->getName().'_'.implode('_', array_keys($keymap));
         }
         $this->relations[$name] = [
             'name' => $name,
-            'table' => $to_table,
+            'table' => $toTable,
             'keymap' => $keymap,
             'many' => false,
             'pivot' => null,
@@ -207,67 +207,67 @@ class Table implements TableInterface
 
         return $this;
     }
-    public function manyToMany($to_table, $pivot, $name = null, $to_table_column = null, $local_column = null)
+    public function manyToMany($toTable, $pivot, $name = null, $toTableColumn = null, $localColumn = null)
     {
-        $to_table = $this->getRelatedTable($to_table);
+        $toTable = $this->getRelatedTable($toTable);
         $pt_table = $this->getRelatedTable($pivot);
 
         $pivot_columns = $pt_table->definition->getColumns();
 
         $keymap = [];
-        if (!isset($to_table_column)) {
-            $to_table_column = [];
+        if (!isset($toTableColumn)) {
+            $toTableColumn = [];
         }
-        if (!is_array($to_table_column)) {
-            $to_table_column = [$to_table_column];
+        if (!is_array($toTableColumn)) {
+            $toTableColumn = [$toTableColumn];
         }
-        foreach ($this->definition->getPrimaryKey() as $k => $pk_field) {
+        foreach ($this->definition->getPrimaryKey() as $k => $pkField) {
             $key = null;
-            if (isset($to_table_column[$pk_field])) {
-                $key = $to_table_column[$pk_field];
-            } elseif (isset($to_table_column[$k])) {
-                $key = $to_table_column[$k];
+            if (isset($toTableColumn[$pkField])) {
+                $key = $toTableColumn[$pkField];
+            } elseif (isset($toTableColumn[$k])) {
+                $key = $toTableColumn[$k];
             } else {
-                $key = $this->definition->getName().'_'.$pk_field;
+                $key = $this->definition->getName().'_'.$pkField;
             }
             if (!in_array($key, $pivot_columns)) {
                 throw new ORMException('Missing foreign key mapping');
             }
-            $keymap[$pk_field] = $key;
+            $keymap[$pkField] = $key;
         }
 
-        $pivot_keymap = [];
-        if (!isset($local_column)) {
-            $local_column = [];
+        $pivotKeymap = [];
+        if (!isset($localColumn)) {
+            $localColumn = [];
         }
-        if (!is_array($local_column)) {
-            $local_column = [$local_column];
+        if (!is_array($localColumn)) {
+            $localColumn = [$localColumn];
         }
-        foreach ($to_table->definition->getPrimaryKey() as $k => $pk_field) {
+        foreach ($toTable->definition->getPrimaryKey() as $k => $pkField) {
             $key = null;
-            if (isset($local_column[$pk_field])) {
-                $key = $local_column[$pk_field];
-            } elseif (isset($local_column[$k])) {
-                $key = $local_column[$k];
+            if (isset($localColumn[$pkField])) {
+                $key = $localColumn[$pkField];
+            } elseif (isset($localColumn[$k])) {
+                $key = $localColumn[$k];
             } else {
-                $key = $to_table->definition->getName().'_'.$pk_field;
+                $key = $toTable->definition->getName().'_'.$pkField;
             }
             if (!in_array($key, $pivot_columns)) {
                 throw new ORMException('Missing foreign key mapping');
             }
-            $pivot_keymap[$key] = $pk_field;
+            $pivotKeymap[$key] = $pkField;
         }
 
         if (!isset($name)) {
-            $name = $to_table->definition->getName().'_'.implode('_', array_keys($keymap));
+            $name = $toTable->definition->getName().'_'.implode('_', array_keys($keymap));
         }
         $this->relations[$name] = [
             'name' => $name,
-            'table' => $to_table,
+            'table' => $toTable,
             'keymap' => $keymap,
             'many' => true,
             'pivot' => $pivot,
-            'pivot_keymap' => $pivot_keymap,
+            'pivot_keymap' => $pivotKeymap,
         ];
 
         return $this;
