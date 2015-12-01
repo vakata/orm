@@ -10,7 +10,13 @@ class TableDefinition implements TableDefinitionInterface, \JsonSerializable
 
     public function __construct(DatabaseInterface $database, $table)
     {
-        $this->definition = ['name' => $table, 'primary_key' => [], 'columns' => [], 'definitions' => [], 'indexed' => []];
+        $this->definition = [
+            'name' => $table,
+            'primary_key' => [],
+            'columns' => [],
+            'definitions' => [],
+            'indexed' => []
+        ];
         switch ($database->driver()) {
             case 'mysql':
             case 'mysqli':
@@ -28,11 +34,23 @@ class TableDefinition implements TableDefinitionInterface, \JsonSerializable
                 break;
             case 'postgre':
             case 'oracle':
-                $this->definition['definitions'] = $database->all('SELECT * FROM information_schema.columns WHERE table_name = ? ', [$table], 'column_name');
+                $this->definition['definitions'] = $database->all(
+                    'SELECT * FROM information_schema.columns WHERE table_name = ? ',
+                    [$table],
+                    'column_name'
+                );
                 $this->definition['columns'] = array_keys($this->definition['definitions']);
-                $tmp = $database->one('SELECT constraint_name FROM information_schema.table_constraints WHERE table_name = ? AND constraint_type = ?', [$table, 'PRIMARY KEY']);
+                $tmp = $database->one(
+                    'SELECT constraint_name FROM information_schema.table_constraints '.
+                    'WHERE table_name = ? AND constraint_type = ?',
+                    [$table, 'PRIMARY KEY']
+                );
                 if ($tmp) {
-                    $this->definition['primary_key'] = $database->all('SELECT column_name FROM information_schema.key_column_usage WHERE table_name = ? AND constraint_name = ?', [$table, $tmp]);
+                    $this->definition['primary_key'] = $database->all(
+                        'SELECT column_name FROM information_schema.key_column_usage '.
+                        'WHERE table_name = ? AND constraint_name = ?',
+                        [$table, $tmp]
+                    );
                 }
                 break;
             default:
@@ -67,10 +85,6 @@ class TableDefinition implements TableDefinitionInterface, \JsonSerializable
     public function toArray()
     {
         return $this->definition;
-    }
-    public function __debugInfo()
-    {
-        return $this->toArray();
     }
     public function jsonSerialize()
     {

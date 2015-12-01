@@ -587,10 +587,6 @@ class Table implements TableInterface
 
         return $temp;
     }
-    public function __debugInfo()
-    {
-        return $this->toArray();
-    }
     public function jsonSerialize()
     {
         return $this->toArray();

@@ -128,10 +128,6 @@ class TableRow implements TableRowInterface
 
         return $temp;
     }
-    public function __debugInfo()
-    {
-        return $this->toArray();
-    }
     public function jsonSerialize()
     {
         return $this->toArray();
