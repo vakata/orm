@@ -210,9 +210,9 @@ class Table implements TableInterface
     public function manyToMany($toTable, $pivot, $name = null, $toTableColumn = null, $localColumn = null)
     {
         $toTable = $this->getRelatedTable($toTable);
-        $pt_table = $this->getRelatedTable($pivot);
+        $ptTable = $this->getRelatedTable($pivot);
 
-        $pivot_columns = $pt_table->definition->getColumns();
+        $pivotColumns = $ptTable->definition->getColumns();
 
         $keymap = [];
         if (!isset($toTableColumn)) {
@@ -230,7 +230,7 @@ class Table implements TableInterface
             } else {
                 $key = $this->definition->getName().'_'.$pkField;
             }
-            if (!in_array($key, $pivot_columns)) {
+            if (!in_array($key, $pivotColumns)) {
                 throw new ORMException('Missing foreign key mapping');
             }
             $keymap[$pkField] = $key;
@@ -252,7 +252,7 @@ class Table implements TableInterface
             } else {
                 $key = $toTable->definition->getName().'_'.$pkField;
             }
-            if (!in_array($key, $pivot_columns)) {
+            if (!in_array($key, $pivotColumns)) {
                 throw new ORMException('Missing foreign key mapping');
             }
             $pivotKeymap[$key] = $pkField;
@@ -285,7 +285,9 @@ class Table implements TableInterface
                 } else {
                     if (preg_match('(^[a-z_0-9]+\.[a-z_0-9*]+$)i', $v)) {
                         $v = explode('.', $v, 2);
-                        if (isset($this->relations[$v[0]]) && ($v[1] === '*' || in_array($v[1], $this->relations[$v[0]]['table']->definition->getColumns()))) {
+                        if (isset($this->relations[$v[0]]) &&
+                            ($v[1] === '*'||in_array($v[1],$this->relations[$v[0]]['table']->definition->getColumns()))
+                        ) {
                             $this->joined[$v[0]] = 'LEFT';
                             $temp[] = $v[1] === '*' ? implode('.', $v) : implode('.', $v).' AS '.implode('___', $v);
                         }
@@ -382,7 +384,9 @@ class Table implements TableInterface
             }
             if (strpos($f[0], '.')) {
                 $t = explode('.', $f[0], 2);
-                if (isset($this->relations[$t[0]]) && in_array($t[1], $this->relations[$t[0]]['table']->definition->getColumns())) {
+                if (isset($this->relations[$t[0]]) &&
+                    in_array($t[1], $this->relations[$t[0]]['table']->definition->getColumns())
+                ) {
                     $this->joined[$t[0]] = 'LEFT';
                     $temp[] = $f[0].' '.$f[1];
                 }
@@ -398,7 +402,10 @@ class Table implements TableInterface
         $column = explode('.', $column, 2);
         if (count($column) === 1 && in_array($column[0], $this->definition->getColumns())) {
             $column = 't.'.$column[0];
-        } elseif (count($column) === 2 && isset($this->relations[$column[0]]) && in_array($column[1], $this->relations[$column[0]]['table']->definition->getColumns())) {
+        } elseif (count($column) === 2 &&
+            isset($this->relations[$column[0]]) &&
+            in_array($column[1], $this->relations[$column[0]]['table']->definition->getColumns())
+        ) {
             $this->joined[$column[0]] = 'LEFT';
             $column = implode('.', $column);
         } else {
@@ -420,7 +427,8 @@ class Table implements TableInterface
 
     public function count()
     {
-        $sql = 'SELECT COUNT(DISTINCT t.'.implode(', t.', $this->definition->getPrimaryKey()).') FROM '.$this->definition->getName().' AS t ';
+        $sql = 'SELECT COUNT(DISTINCT t.'.implode(', t.', $this->definition->getPrimaryKey()).') '.
+                'FROM '.$this->definition->getName().' AS t ';
         foreach ($this->joined as $k => $v) {
             if ($this->relations[$k]['pivot']) {
                 $sql .= 'LEFT JOIN '.$this->relations[$k]['pivot'].' AS '.$k.'_pivot ON ';
