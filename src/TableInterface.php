@@ -13,7 +13,7 @@ interface TableInterface extends \Iterator, \ArrayAccess, \Countable, \JsonSeria
     public function hasOne($toTable, $name = null, $toTableColumn = null);
     public function hasMany($toTable, $name = null, $toTableColumn = null);
     public function belongsTo($toTable, $name = null, $toTableColumn = null);
-    public function manyToMany($toTable, $pivot, $name = null, $toTableColumn = null, $local_column = null);
+    public function manyToMany($toTable, $pivot, $name = null, $toTableColumn = null, $localColumn = null);
 
     public function select($limit = 0, $offset = 0, array $fields = null);
     public function where($sql, array $params = []);

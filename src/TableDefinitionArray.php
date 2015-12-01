@@ -42,10 +42,6 @@ class TableDefinitionArray implements TableDefinitionInterface, \JsonSerializabl
     {
         return $this->definition;
     }
-    public function __debugInfo()
-    {
-        return $this->toArray();
-    }
     public function jsonSerialize()
     {
         return $this->toArray();
