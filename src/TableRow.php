@@ -99,8 +99,8 @@ class TableRow implements TableRowInterface
 
             return $this->cche[$ckey] = $table->where(
                 ' ('.implode(',', $relation['pivot_keymap']).') IN ('.
-                    implode(',', array_fill(0, count($ids), (count($relation['pivot_keymap']) === 1 ?
-                        '?' : '('.implode(',', array_fill(0, count($relation['pivot_keymap']), '?')).
+                implode(',', array_fill(0, count($ids), (count($relation['pivot_keymap']) === 1 ?
+                '?' : '('.implode(',', array_fill(0, count($relation['pivot_keymap']), '?')).
                 ')'))).')',
                 count($relation['pivot_keymap']) === 1 ? $ids : call_user_func_array('array_merge', $ids)
             )->select();
@@ -119,7 +119,7 @@ class TableRow implements TableRowInterface
     {
         $temp = array_merge($this->data, $this->chng);
         if ($full) {
-            foreach ($this->relations as $k => $v) {
+            foreach (array_keys($this->relations) as $k) {
                 if ($this->{$k}) {
                     $temp[$k] = $this->{$k}->toArray(true);
                 }
@@ -145,8 +145,7 @@ class TableRow implements TableRowInterface
     }
     public function __set($key, $value)
     {
-        if (
-            in_array($key, $this->definition->getColumns()) &&
+        if (in_array($key, $this->definition->getColumns()) &&
             (isset($this->chng[$key]) || !isset($this->data[$key]) || $this->data[$key] !== $value)
         ) {
             $this->chng[$key] = $value;
@@ -154,7 +153,7 @@ class TableRow implements TableRowInterface
         if (isset($this->relations[$key])) {
             $temp = $this->{$k}();
             if ($temp) {
-                foreach ($temp as $k => $v) {
+                foreach (array_keys($temp) as $k) {
                     unset($temp[$k]);
                 }
                 if ($value !== null) {
@@ -346,7 +345,8 @@ class TableRow implements TableRowInterface
                     $sql[] = $k.' = ? ';
                 }
                 $this->database->query(
-                    'DELETE FROM '.$this->definition->getName().' WHERE '.implode(' AND ', $sql), $fk
+                    'DELETE FROM '.$this->definition->getName().' WHERE '.implode(' AND ', $sql),
+                    $fk
                 );
             }
             $this->database->commit($trans);
