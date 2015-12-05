@@ -45,15 +45,6 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		self::$db->query('INSERT INTO author VALUES(NULL, ?)', ['Terry Pratchett']);
 		self::$db->query('INSERT INTO author VALUES(NULL, ?)', ['Ray Bradburry']);
 
-		self::$author   = new \vakata\orm\Table(self::$db, 'author');
-		self::$tag      = new \vakata\orm\Table(self::$db, 'tag');
-		self::$book_tag = new \vakata\orm\Table(self::$db, 'book_tag');
-		self::$book     = new \vakata\orm\Table(self::$db, 'book');
-
-		self::$book->manyToMany(self::$tag, 'book_tag', 'tags', 'book_id', 'tag_id');
-		//self::$book->belongsTo(self::$book, 'author', 'author_id');
-		self::$author->hasMany(self::$book, 'books', 'author_id');
-
 		self::$db->query('INSERT INTO author VALUES(NULL, ?)', ['Douglas Adams']);
 		self::$db->query('INSERT INTO book VALUES(NULL, ?, ?)', ['Equal rites', 1]);
 		self::$db->query('INSERT INTO tag VALUES(NULL, ?)', ['Discworld']);
@@ -75,7 +66,20 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		// self::$db->query("TRUNCATE TABLE test;");
 	}
 
+	public function testConstruct() {
+		self::$author   = new \vakata\orm\Table(self::$db, 'author');
+		self::$tag      = new \vakata\orm\Table(self::$db, 'tag');
+		self::$book_tag = new \vakata\orm\Table(self::$db, 'book_tag');
+		self::$book     = new \vakata\orm\Table(self::$db, 'book');
 
+		self::$book->manyToMany(self::$tag, 'book_tag', 'tags', 'book_id', 'tag_id');
+		//self::$book->belongsTo(self::$book, 'author', 'author_id');
+		self::$author->hasMany(self::$book, 'books', 'author_id');
+	}
+
+	/**
+	 * @depends testConstruct
+	 */
 	public function testReadLoop() {
 		foreach(self::$author as $k => $a) {
 			$this->assertEquals($k + 1, $a->id);
@@ -84,19 +88,31 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 			$this->assertEquals($k + 1, $a->id);
 		}
 	}
+	/**
+	 * @depends testConstruct
+	 */
 	public function testReadIndex() {
 		$this->assertEquals(self::$author[0]->name, 'Terry Pratchett');
 		$this->assertEquals(self::$author[2]->name, 'Douglas Adams');
 	}
+	/**
+	 * @depends testConstruct
+	 */
 	public function testReadRelations() {
 		$this->assertEquals(self::$author[0]->books[0]->name, 'Equal rites');
 		$this->assertEquals(self::$author[0]->books[0]->tags[1]->name, 'Escarina');
 	}
+	/**
+	 * @depends testConstruct
+	 */
 	public function testReadChanges() {
 		self::$db->query('INSERT INTO author VALUES(NULL, ?)', ['Stephen King']);
 		self::$author->reset();
 		$this->assertEquals(self::$author[3]->name, 'Stephen King');
 	}
+	/**
+	 * @depends testConstruct
+	 */
 	public function testCreate() {
 		self::$author[] = [ 'name' => 'John Resig' ];
 		self::$author->save();
@@ -105,18 +121,27 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		$this->assertEquals(self::$author[0]->books[0]->name, 'Equal rites');
 		$this->assertEquals(self::$author[0]->books[0]->tags[1]->name, 'Escarina');
 	}
+	/**
+	 * @depends testConstruct
+	 */
 	public function testUpdate() {
 		self::$author[0]->name = 'Terry Pratchett, Sir';
 		self::$author->save();
 		self::$author->reset();
 		$this->assertEquals('Terry Pratchett, Sir', self::$author[0]->name);
 	}
+	/**
+	 * @depends testConstruct
+	 */
 	public function testDelete() {
 		self::$author[4]->delete();
 		self::$author->reset();
 		$this->assertEquals(4, self::$author->count());
 		$this->assertEquals(null, self::$author[4]);
 	}
+	/**
+	 * @depends testConstruct
+	 */
 	public function testChangePK() {
 		$this->assertEquals(self::$author[2]->name, 'Douglas Adams');
 		$this->assertEquals(self::$author[2]->id, 3);
@@ -140,6 +165,9 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		$this->assertEquals('The Hitchhiker\'s Guide to the Galaxy', self::$author[3]->books[0]->name);
 		return;
 	}
+	/**
+	 * @depends testConstruct
+	 */
 	public function testRemoveRelation() {
 		$this->assertEquals('Discworld', self::$author[0]->books[0]->tags[0]->name);
 		unset(self::$author[0]->books[0]->tags[0]);
@@ -149,12 +177,18 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		self::$tag->reset();
 		$this->assertEquals('Discworld', self::$tag[0]->name);
 	}
+	/**
+	 * @depends testConstruct
+	 */
 	public function testCreateRelation() {
 		self::$author[0]->books[0]->tags[] = self::$tag->create(['name' => 'Testing']);
 		self::$author[0]->books->save();
 		self::$author->reset();
 		$this->assertEquals('Testing', self::$author[0]->books[0]->tags[1]->name);
 	}
+	/**
+	 * @depends testConstruct
+	 */
 	public function testEditRelation() {
 		self::$author[0]->books[0]->tags[1]->name = 'Modified';
 		self::$author[0]->books->save();
@@ -162,6 +196,9 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		self::$tag->reset();
 		$this->assertEquals('Modified', self::$tag[3]->name);
 	}
+	/**
+	 * @depends testConstruct
+	 */
 	public function testComplexPK() {
 		$this->assertEquals('', self::$book_tag[0]->info);
 		self::$book_tag[0]->info = 'TEMP';
@@ -169,6 +206,9 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		self::$book_tag->reset();
 		$this->assertEquals('TEMP', self::$book_tag[0]->info);
 	}
+	/**
+	 * @depends testConstruct
+	 */
 	public function testComplexPKChange() {
 		$this->assertEquals(1, self::$book_tag[0]->book_id);
 		$this->assertEquals(2, self::$book_tag[0]->tag_id);
@@ -180,5 +220,12 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		$this->assertEquals(3, self::$book_tag[1]->book_id);
 		$this->assertEquals(3, self::$book_tag[1]->tag_id);
 		$this->assertEquals('TEMP', self::$book_tag[1]->info);
+	}
+	/**
+	 * @depends testConstruct
+	 */
+	public function testDeleteAll() {
+		self::$book->delete();
+		$this->assertEquals(0, self::$db->one('SELECT COUNT(*) FROM book'));
 	}
 }
