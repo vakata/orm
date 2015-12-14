@@ -290,6 +290,10 @@ class Table implements TableInterface
                         ) {
                             $this->joined[$v[0]] = 'LEFT';
                             $temp[] = $v[1] === '*' ? implode('.', $v) : implode('.', $v).' AS '.implode('___', $v);
+                            // add the needed local keys, so that remote keys will work
+                            foreach (array_keys($this->relations[$v[0]]['keymap']) as $k) {
+                                $temp[] = 't.'.$k;
+                            }
                         }
                     }
                 }
@@ -302,7 +306,7 @@ class Table implements TableInterface
                 $fields[] = 't.'.$c;
             }
         }
-        $sql = 'SELECT '.implode(', ', $fields).' FROM '.$this->table.' AS t ';
+        $sql = 'SELECT '.implode(', ', array_unique($fields)).' FROM '.$this->table.' AS t ';
 
         foreach ($this->joined as $k => $v) {
             if ($this->relations[$k]['pivot']) {
@@ -521,6 +525,7 @@ class Table implements TableInterface
         if ($value instanceof TableRow) {
             $this->del[] = $temp;
             $this->new[] = $value;
+            return;
         }
         throw new ORMException('Invalid input to offsetSet');
     }
