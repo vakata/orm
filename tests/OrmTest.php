@@ -318,6 +318,7 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		$book = new \vakata\orm\Table(self::$db, 'book');
 		$book->addAdvancedRelation('author', 'author', ['author_id' => 'id'], false);
 		$this->assertEquals('Terry Pratchett, Sir', $book[0]->author->name);
+		$this->assertEquals(['author'], $book->getRelationKeys());
 	}
 	/**
 	 * @depends testConstruct
@@ -331,6 +332,7 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		$def = self::$author->getDefinition();
 		$this->assertEquals(['id'], $def->primary_key);
 		$this->assertEquals(['id'], $def->primaryKey);
+		$this->assertEquals(null, $def->primaryKey2);
 		$this->assertEquals(true, json_encode($def) !== false);
 		$this->assertEquals(['name', 'primary_key', 'columns', 'definitions', 'indexed'], array_keys($def->toArray()));
 	}
@@ -345,6 +347,9 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		$def = new \vakata\orm\TableDefinitionArray('author', ['primary_key' => ['id'], 'columns'=>['id','name']]);
 		$this->assertEquals(['id'], $def->primary_key);
 		$this->assertEquals(['id'], $def->primaryKey);
+		$this->assertEquals(null, $def->primaryKey2);
+		$this->assertEquals('author', $def->getName());
+		$this->assertEquals(['id','name'], $def->getColumns());
 		$this->assertEquals(true, json_encode($def) !== false);
 		$this->assertEquals(['name', 'primary_key', 'columns', 'definitions', 'indexed'], array_keys($def->toArray()));
 	}

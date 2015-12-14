@@ -32,6 +32,7 @@ class TableDefinition implements TableDefinitionInterface, \JsonSerializable
                 }
                 $this->definition['indexed'] = array_unique($this->definition['indexed']);
                 break;
+            /*
             case 'postgre':
             case 'oracle':
                 $this->definition['definitions'] = $database->all(
@@ -53,6 +54,7 @@ class TableDefinition implements TableDefinitionInterface, \JsonSerializable
                     );
                 }
                 break;
+            */
             default:
                 throw new ORMException('Driver is not supported: '.$database->driver(), 500);
         }
