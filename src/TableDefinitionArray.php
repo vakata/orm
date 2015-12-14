@@ -9,7 +9,7 @@ class TableDefinitionArray implements TableDefinitionInterface, \JsonSerializabl
     public function __construct($table, array $definition = [])
     {
         $this->definition = array_merge(
-            ['name' => $table, 'primary_key' => [], 'columns' => [], 'definitions' => []],
+            ['name' => $table, 'primary_key' => [], 'columns' => [], 'definitions' => [], 'indexed'=>[]],
             $definition
         );
     }

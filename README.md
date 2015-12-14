@@ -19,9 +19,54 @@ $ composer require vakata/orm
 ## Usage
 
 ``` php
-$db = new vakata\orm\Table('');
-echo $db->one("SELECT * FROM table WHERE id = 1");
+// first you need a database instance
+$db = new \vakata\database\DB('mysqli://root@127.0.0.1/test');
+
+// then you can create the table object
+$books = new \vakata\orm\Table($db, 'books'); // assuming there is a books table
+foreach ($books as $v) {
+    // iterate over the books
+}
+$books[0]; // get the first book
+
+// you can also filter and order
+$books->filter('pages', 10)->order('name DESC');
+foreach ($books) { }
+
+// do not forget to reset if you want to change filters
+$books->reset(); // clears filters and ordering
+
+// the power comes from relations
+$authors = new \vakata\orm\Table($db, 'authors');
+// create a 1-to-1 relation by specifying a table object, relation name and column name (on the books table)
+$book->belongsTo($authors, 'author', 'author_id');
+// now you can access the relation by its name
+$books[0]->author->name;
+// you can also filter by it
+$books->filter('author.name', 'Terry Pratchett');
+// or order
+$books->order('author.name');
+
+// there is also are hasOne / hasMany / manyToMany relations
+$authors->hasMany($books, 'books', 'author_id');
+// now you can use
+$author[0]->books[1]->name;
+
+// manyToMany relations require a pivot table
+$tags = new \vakata\orm\Table($db, 'tags');
+// create using: table instance, pivot table name, relation name, own id, foreign id
+$books->manyToMany($tags, 'book_tag', 'tags', 'book_id', 'tag_id');
+
+// you can also create, edit or delete relations
+$books[0]->tags[] = $tags->create(['name' => 'Testing']);
+$books->save();
+$books[0]->tags[0]->name = 'New name';
+$books->save();
+unset($books[0]->tags[0]);
+$books->save();
 ```
+
+Read more in the [API docs](docs/README.md)
 
 ## Testing
 

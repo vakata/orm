@@ -88,6 +88,8 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		$author = new \vakata\orm\Table(self::$db, 'author');
 		$book->belongsTo($author, 'author', 'author_id');
 		$this->assertEquals($book[0]->author->name, 'Terry Pratchett');
+		$book->filter('author.name', 'Terry Pratchett');
+		$this->assertEquals($book->count(), 1);
 	}
 	/**
 	 * @depends testConstruct
@@ -208,6 +210,11 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		$book->order('name ASC', true);
 		$this->assertEquals($book[0]->name, 'Equal rites');
 	}
+	public function testSelect() {
+		$author = new \vakata\orm\Table(self::$db, 'author');
+		$author->select(1,1,['name']);
+		$this->assertEquals($author[0]->name, 'Ray Bradburry');
+	}
 	/**
 	 * @depends testConstruct
 	 */
@@ -238,6 +245,12 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		self::$author->reset();
 		self::$tag->reset();
 		$this->assertEquals('Modified', self::$tag[3]->name);
+
+		self::$author[0]->books[0]->tags[1] = [ 'name' => 'Modified2' ];
+		self::$author[0]->books->save();
+		self::$author->reset();
+		self::$tag->reset();
+		$this->assertEquals('Modified2', self::$tag[3]->name);
 	}
 	/**
 	 * @depends testConstruct
@@ -264,6 +277,24 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		$this->assertEquals(3, self::$book_tag[1]->tag_id);
 		$this->assertEquals('TEMP', self::$book_tag[1]->info);
 	}
+	public function testRow() {
+		$book = new \vakata\orm\Table(self::$db, 'book');
+		$author = new \vakata\orm\Table(self::$db, 'author');
+		$book->belongsTo($author, 'author', 'author_id');
+		$this->assertEquals(
+			[
+				'id' => 1,
+				'name' => 'Equal rites',
+				'author_id' => 1,
+				'author' => [
+					'id' => 1,
+					'name' => 'Terry Pratchett, Sir'
+				]
+			],
+			$book[0]->toArray()
+		);
+		$this->assertEquals(true, json_encode($book[0]) !== false);
+	}
 	/**
 	 * @depends testConstruct
 	 */
@@ -272,7 +303,19 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		$this->assertEquals(0, self::$db->one('SELECT COUNT(*) FROM book'));
 	}
 
-	// Table: offsetSet, toArray
-	// DefinitionArray:
-	// Row: toArray (with relations), save (with relations)
+	public function testDefinition() {
+		$def = self::$author->getDefinition();
+		$this->assertEquals(['id'], $def->primary_key);
+		$this->assertEquals(true, json_encode($def) !== false);
+		$this->assertEquals(['name', 'primary_key', 'columns', 'definitions', 'indexed'], array_keys($def->toArray()));
+	}
+
+	public function testDefinitionArray() {
+		$def = new \vakata\orm\TableDefinitionArray('author', ['primary_key' => ['id'], 'columns'=>['id','name']]);
+		$this->assertEquals(['id'], $def->primary_key);
+		$this->assertEquals(true, json_encode($def) !== false);
+		$this->assertEquals(['name', 'primary_key', 'columns', 'definitions', 'indexed'], array_keys($def->toArray()));
+	}
+
+	// Row: toArray (with relations), json_encode(), save (with many2many or belongsTo relations)
 }

@@ -15,13 +15,20 @@
             "role": "Developer"
         }
     ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/vakata/phpdoc-md"
+        }
+    ],
     "require": {
         "php" : ">=5.4.0",
-        "vakata/database" : ">=1.0.0"
+        "vakata/database" : ">=1.0.1"
     },
     "require-dev": {
         "phpunit/phpunit" : "4.*",
-        "codeclimate/php-test-reporter": "dev-master"
+        "codeclimate/php-test-reporter": "dev-master",
+        "clean/phpdoc-md": "dev-master"
     },
     "autoload": {
         "psr-4": {
@@ -36,6 +43,6 @@
     "scripts": {
         "test": "phpunit",
         "psr2": "php-cs-fixer fix ./src",
-        "phpdoc": "phpDocumentor -d ./src -t ./docs"
+        "phpdoc": "phpdoc-md"
     }
 }

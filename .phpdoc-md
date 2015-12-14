@@ -1,0 +1,12 @@
+<?php
+return (object)[
+    'rootNamespace' => 'vakata\orm',
+    'destDirectory' => 'docs',
+    'format' => 'github',
+    'classes' => [
+        '\\vakata\\orm\\Table',
+        '\\vakata\\orm\\TableRow',
+        '\\vakata\\orm\\TableDefinition',
+        '\\vakata\\orm\\TableDefinitionArray'
+    ],
+];
