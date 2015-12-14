@@ -147,9 +147,9 @@ class TableRow implements TableRowInterface
             $this->chng[$key] = $value;
         }
         if (isset($this->relations[$key])) {
-            $temp = $this->{$k}();
+            $temp = $this->{$key}();
             if ($temp) {
-                foreach (array_keys($temp) as $k) {
+                foreach ($temp as $k => $v) {
                     unset($temp[$k]);
                 }
                 if ($value !== null) {

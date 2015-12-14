@@ -320,6 +320,15 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		$this->assertEquals('Terry Pratchett, Sir', $book[0]->author->name);
 		$this->assertEquals(['author'], $book->getRelationKeys());
 	}
+	public function testEditRelation2() {
+		$book = new \vakata\orm\Table(self::$db, 'book');
+		$author = new \vakata\orm\Table(self::$db, 'author');
+		$book->belongsTo($author, 'author');
+		$book[1]->author = ['name'=>'Test'];
+		$book->save();
+		$book->reset();
+		$this->assertEquals('Test', $book[1]->author->name);
+	}
 	/**
 	 * @depends testConstruct
 	 */
@@ -336,7 +345,9 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		$this->assertEquals(true, json_encode($def) !== false);
 		$this->assertEquals(['name', 'primary_key', 'columns', 'definitions', 'indexed'], array_keys($def->toArray()));
 	}
-
+	/**
+	 * @depends testDeleteAll
+	 */
 	public function testTableArray() {
 		$this->assertEquals(true, json_encode(self::$author) !== false);
 		self::$author->filter('id', 1);
