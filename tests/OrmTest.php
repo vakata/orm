@@ -77,6 +77,30 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		self::$author->hasMany(self::$book, 'books', 'author_id');
 	}
 
+	public function testHasOne() {
+		$book = new \vakata\orm\Table(self::$db, 'book');
+		$author = new \vakata\orm\Table(self::$db, 'author');
+		$author->hasOne($book, 'book', 'author_id');
+		$this->assertEquals($author[0]->book->name, 'Equal rites');
+	}
+	public function testBelongsTo() {
+		$book = new \vakata\orm\Table(self::$db, 'book');
+		$author = new \vakata\orm\Table(self::$db, 'author');
+		$book->belongsTo($author, 'author', 'author_id');
+		$this->assertEquals($book[0]->author->name, 'Terry Pratchett');
+	}
+	/**
+	 * @depends testConstruct
+	 */
+	public function testFilterCount() {
+		self::$book->filter('tags.name', 'Escarina');
+		$this->assertEquals(self::$book[0]->name, 'Equal rites');
+		$this->assertEquals(self::$book->count(), 1);
+		self::$book->reset();
+		self::$book->filter('tags.name', 'Escarina1');
+		$this->assertEquals(self::$book->count(), 0);
+		self::$book->reset();
+	}
 	/**
 	 * @depends testConstruct
 	 */
@@ -166,6 +190,25 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		return;
 	}
 	/**
+	 * @depends testCreateRelationFromDB
+	 */
+	public function testOrder() {
+		$tag = new \vakata\orm\Table(self::$db, 'tag');
+		$tag->order('name');
+		$this->assertEquals($tag[0]->name, 'Cooking');
+		$tag->reset()->order('name DESC');
+		$this->assertEquals($tag[0]->name, 'Escarina');
+
+		$book = new \vakata\orm\Table(self::$db, 'book');
+		$author = new \vakata\orm\Table(self::$db, 'author');
+		$book->belongsTo($author, 'author', 'author_id');
+		$book->order('author.name ASC');
+		$this->assertEquals($book[0]->name, 'The Hitchhiker\'s Guide to the Galaxy');
+		$book->reset();
+		$book->order('name ASC', true);
+		$this->assertEquals($book[0]->name, 'Equal rites');
+	}
+	/**
 	 * @depends testConstruct
 	 */
 	public function testRemoveRelation() {
@@ -228,4 +271,8 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 		self::$book->delete();
 		$this->assertEquals(0, self::$db->one('SELECT COUNT(*) FROM book'));
 	}
+
+	// Table: offsetSet, toArray
+	// DefinitionArray:
+	// Row: toArray (with relations), save (with relations)
 }
