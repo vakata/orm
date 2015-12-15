@@ -5,7 +5,7 @@ namespace vakata\orm;
 use vakata\dabatase\DatabaseException;
 
 /**
- * Used in conjunction with \vakata\orm\Table
+ * Used in conjunction with `\vakata\orm\Table`.
  * This class should not be instantiated manually - the table class will create instances as needed.
  * When iterating a table what you get are instances of this class. Columns are available as properties.
  */
