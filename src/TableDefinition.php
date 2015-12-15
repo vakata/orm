@@ -4,10 +4,19 @@ namespace vakata\orm;
 
 use vakata\database\DatabaseInterface;
 
+/**
+ * TableDefinition is used when working with the \vakata\orm\Table class.
+ * The class provides information about a table in the database, and autocollects that information when created.
+ */
 class TableDefinition implements TableDefinitionInterface, \JsonSerializable
 {
     protected $definition = [];
-
+    /**
+     * Create an instance.
+     * @method __construct
+     * @param  \vakata\database\DatabaseInterface $database a database instance
+     * @param  string            $table    the name of the table to be processed
+     */
     public function __construct(DatabaseInterface $database, $table)
     {
         $this->definition = [
@@ -70,20 +79,38 @@ class TableDefinition implements TableDefinitionInterface, \JsonSerializable
 
         return;
     }
-
+    /**
+     * Get the table name.
+     * @method getName
+     * @return string  the name of the table
+     */
     public function getName()
     {
         return $this->definition['name'];
     }
+    /**
+     * Get the columns forming the primary key.
+     * @method getPrimaryKey
+     * @return array        array of primary key columns
+     */
     public function getPrimaryKey()
     {
         return $this->definition['primary_key'];
     }
+    /**
+     * Get a list of columns.
+     * @method getColumns
+     * @return array     array of strings of column names
+     */
     public function getColumns()
     {
         return $this->definition['columns'];
     }
-
+    /**
+     * Get the current definition as an array.
+     * @method toArray
+     * @return array  the definition
+     */
     public function toArray()
     {
         return $this->definition;

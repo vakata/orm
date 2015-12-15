@@ -4,6 +4,9 @@ namespace vakata\orm;
 
 use vakata\database\DatabaseInterface;
 
+/**
+ * A table abstraction with support for filtering, ordering, create, update, delete and array-like access and iteration.
+ */
 class Table implements TableInterface
 {
     protected $database = null;
@@ -21,6 +24,13 @@ class Table implements TableInterface
     protected $joined = [];
     protected $order = null;
 
+    /**
+     * Create an instance.
+     * @method __construct
+     * @param  DatabaseInterface             $database   database instance
+     * @param  string                        $table      the table name
+     * @param  \vakata\orm\TableDefinitionInterface|null $definition the optional table defintion
+     */
     public function __construct(DatabaseInterface $database, $table, TableDefinitionInterface $definition = null)
     {
         $this->database = $database;
@@ -31,19 +41,38 @@ class Table implements TableInterface
     {
         $this->reset();
     }
-
+    /**
+     * Returns the database instance being used.
+     * @method getDatabase
+     * @return \vakata\database\DatabaseInterface      the database instance
+     */
     public function getDatabase()
     {
         return $this->database;
     }
+    /**
+     * Get the table definition.
+     * @method getDefinition
+     * @return \vakata\orm\TableDefinitionInterface        the table definition
+     */
     public function getDefinition()
     {
         return $this->definition;
     }
+    /**
+     * Get the defined relationships to other tables.
+     * @method getRelations
+     * @return array       the defined relationships
+     */
     public function &getRelations()
     {
         return $this->relations;
     }
+    /**
+     * Get only the names of the defined relationships to other tables.
+     * @method getRelationKeys
+     * @return array          an array of strings
+     */
     public function getRelationKeys()
     {
         return array_keys($this->relations);
@@ -84,6 +113,15 @@ class Table implements TableInterface
 
         return $this;
     }
+    /**
+     * Define a relationship where a remote table has 0 or 1 rows for each row in the current table.
+     * The remote table generally should have a field (or fields) pointing to the ID of the current table.
+     * @method hasOne
+     * @param  \vakata\orm\TableDefintionInterface|string  $toTable       the table definition or name
+     * @param  string        $name          the name of the relationship (the name is used to access the data later)
+     * @param  string|array  $toTableColumn the column (or columns) in the foreign table
+     * @return self
+     */
     public function hasOne($toTable, $name = null, $toTableColumn = null)
     {
         $toTable = $this->getRelatedTable($toTable);
@@ -125,6 +163,15 @@ class Table implements TableInterface
 
         return $this;
     }
+    /**
+     * Define a relationship where a remote table has any number of rows for each row in the current table.
+     * The remote table generally should have a field (or fields) pointing to the ID of the current table.
+     * @method hasMany
+     * @param  \vakata\orm\TableDefintionInterface|string  $toTable       the table definition or name
+     * @param  string        $name          the name of the relationship (the name is used to access the data later)
+     * @param  string|array  $toTableColumn the column (or columns) in the foreign table
+     * @return self
+     */
     public function hasMany($toTable, $name = null, $toTableColumn = null)
     {
         $toTable = $this->getRelatedTable($toTable);
@@ -166,6 +213,15 @@ class Table implements TableInterface
 
         return $this;
     }
+    /**
+     * Define a relationship where a remote table has 0 or 1 rows for each row in the current table.
+     * The current table generally should have a field (or fields) pointing to the ID of the foreign table.
+     * @method belongsTo
+     * @param  \vakata\orm\TableDefintionInterface|string  $toTable       the table definition or name
+     * @param  string        $name          the name of the relationship (the name is used to access the data later)
+     * @param  string|array  $toTableColumn the column (or columns) in the current table
+     * @return self
+     */
     public function belongsTo($toTable, $name = null, $localColumn = null)
     {
         $toTable = $this->getRelatedTable($toTable);
@@ -207,6 +263,16 @@ class Table implements TableInterface
 
         return $this;
     }
+    /**
+     * Add a relationship which uses a pivot table (many to many).
+     * @method manyToMany
+     * @param  \vakata\orm\TableDefintionInterface|string  $toTable       the table definition or name
+     * @param  \vakata\orm\TableDefintionInterface|string  $pivot         the pivot table
+     * @param  string        $name          the name of the relationship (the name is used to access the data later)
+     * @param  string|array  $toTableColumn the column (or columns) in the pivot table connecting to the current table primary key
+     * @param  string|array  $rlTableColumn the column (or columns) in the pivot table connecting to the related table primary key
+     * @return self
+     */
     public function manyToMany($toTable, $pivot, $name = null, $toTableColumn = null, $localColumn = null)
     {
         $toTable = $this->getRelatedTable($toTable);
@@ -272,7 +338,14 @@ class Table implements TableInterface
 
         return $this;
     }
-
+    /**
+     * Perform the actual data fetching (after filtering and / or ordering), all params are optional.
+     * @method select
+     * @param  integer    $limit  how many rows to fetch
+     * @param  integer    $offset skip $offset many rows from the beginning
+     * @param  array|null $fields an array of column names to fetch, if related columns are needed use <relationshipname>.<columnname>
+     * @return self
+     */
     public function select($limit = 0, $offset = 0, array $fields = null)
     {
         if ($fields && count($fields)) {
@@ -353,6 +426,13 @@ class Table implements TableInterface
 
         return $this;
     }
+    /**
+     * Filter results using a raw query.
+     * @method where
+     * @param  string $sql    the sql filter query
+     * @param  array  $params any parameters (if needed for the query)
+     * @return self
+     */
     public function where($sql, array $params = [])
     {
         $this->filter[] = '('.$sql.')';
@@ -362,6 +442,13 @@ class Table implements TableInterface
 
         return $this;
     }
+    /**
+     * Order the result set.
+     * @method order
+     * @param  string  $order the order query
+     * @param  boolean $raw   should the query be used as is, or parsed (defaults to false, which means parsing)
+     * @return self
+     */
     public function order($order, $raw = false)
     {
         if ($raw) {
@@ -400,7 +487,13 @@ class Table implements TableInterface
 
         return $this;
     }
-
+    /**
+     * Filter the result set by column.
+     * @method filter
+     * @param  string $column the column name to filter on (use <relationshipname>.<columnname> to filter on related tables)
+     * @param  mixed $value   the desired column value (can be a primitive or an array)
+     * @return self
+     */
     public function filter($column, $value)
     {
         $column = explode('.', $column, 2);
@@ -428,7 +521,11 @@ class Table implements TableInterface
 
         return $this;
     }
-
+    /**
+     * Get the result set count.
+     * @method count
+     * @return int the row count
+     */
     public function count()
     {
         $sql = 'SELECT COUNT(DISTINCT t.'.implode(', t.', $this->definition->getPrimaryKey()).') '.
@@ -463,6 +560,11 @@ class Table implements TableInterface
 
         return $this->database->one($sql, $this->params);
     }
+    /**
+     * Clears all filters, ordering, etc.
+     * @method reset
+     * @return self
+     */
     public function reset()
     {
         $this->filter = [];
@@ -590,7 +692,12 @@ class Table implements TableInterface
         return $this->result->valid();
     }
 
-    // helpers
+    /**
+     * Get the current result set as an array.
+     * @method toArray
+     * @param  boolean $full should relations be fetched as well
+     * @return array        the data
+     */
     public function toArray($full = true)
     {
         $temp = [];
@@ -605,7 +712,12 @@ class Table implements TableInterface
         return $this->toArray();
     }
 
-    // modifiers
+    /**
+     * Create a new row for the current table (will not be persisted until save() is invoked).
+     * @method create
+     * @param  array  $data array of values for each column
+     * @return \vakata\orm\TableRow the new row
+     */
     public function create(array $data = [])
     {
         $temp = new TableRow(clone $this, [], true);
@@ -613,6 +725,12 @@ class Table implements TableInterface
 
         return $this->new[] = $temp;
     }
+    /**
+     * Persist all changes to database.
+     * @method save
+     * @param  array   $data   optionally override all new elements with these values
+     * @param  boolean $delete should removed items be deleted from the database (defaults to true)
+     */
     public function save(array $data = [], $delete = true)
     {
         $trans = $this->database->begin();
@@ -645,6 +763,10 @@ class Table implements TableInterface
             throw $e;
         }
     }
+    /**
+     * Remove the current result set from the database.
+     * @method delete
+     */
     public function delete()
     {
         $trans = $this->database->begin();

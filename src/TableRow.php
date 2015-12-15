@@ -4,6 +4,11 @@ namespace vakata\orm;
 
 use vakata\dabatase\DatabaseException;
 
+/**
+ * Used in conjunction with \vakata\orm\Table
+ * This class should not be instantiated manually - the table class will create instances as needed.
+ * When iterating a table what you get are instances of this class. Columns are available as properties.
+ */
 class TableRow implements TableRowInterface
 {
     protected $table = null;
@@ -38,7 +43,11 @@ class TableRow implements TableRowInterface
             }
         }
     }
-
+    /**
+     * Get the primary key for the row, always an array in a "column"=>"value" format.
+     * @method getID
+     * @return array the primary key columns and their values
+     */
     public function getID()
     {
         $temp = [];
@@ -114,7 +123,12 @@ class TableRow implements TableRowInterface
 
         return $this->cche[$ckey] = $table->where(implode(' AND ', $sql), $par)->select();
     }
-
+    /**
+     * Get the row as an array.
+     * @method toArray
+     * @param  boolean $full should relations be included (defaults to true)
+     * @return array        the row as an array
+     */
     public function toArray($full = true)
     {
         $temp = array_merge($this->data, $this->chng);
@@ -132,7 +146,11 @@ class TableRow implements TableRowInterface
     {
         return $this->toArray();
     }
-
+    /**
+     * Merge new data in the current row.
+     * @method fromArray
+     * @param  array     $data data to merge in "column"=>"value" format
+     */
     public function fromArray(array $data)
     {
         foreach ($data as $k => $v) {
@@ -160,6 +178,10 @@ class TableRow implements TableRowInterface
     }
 
     // modifiers
+    /**
+     * Persist changes to DB.
+     * @method save
+     */
     public function save()
     {
         $trans = $this->database->begin();
@@ -312,6 +334,10 @@ class TableRow implements TableRowInterface
             throw $e;
         }
     }
+    /**
+     * Delete current row from the DB.
+     * @method delete
+     */
     public function delete()
     {
         $trans = $this->database->begin();
