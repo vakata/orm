@@ -96,7 +96,7 @@ class Table implements TableInterface
 
         return $toTable;
     }
-    public function addAdvancedRelation($toTable, $name, array $keymap, $many = true, $pivot = null, array $map = [])
+    public function addAdvancedRelation($toTable, $name, array $keymap, $many = true, $pivot = null, array $map = [], $sql = null, array $par = [])
     {
         if (!count($keymap)) {
             throw new ORMException('No linking fields specified');
@@ -108,7 +108,9 @@ class Table implements TableInterface
             'keymap' => $keymap,
             'many' => (bool) $many,
             'pivot' => $pivot,
-            'pivot_keymap' => $map
+            'pivot_keymap' => $map,
+            'sql' => $sql,
+            'par' => $par
         ];
 
         return $this;
@@ -122,7 +124,7 @@ class Table implements TableInterface
      * @param  string|array  $toTableColumn the column (or columns) in the foreign table
      * @return self
      */
-    public function hasOne($toTable, $name = null, $toTableColumn = null)
+    public function hasOne($toTable, $name = null, $toTableColumn = null, $sql = null, array $par = [])
     {
         $toTable = $this->getRelatedTable($toTable);
         $columns = $toTable->definition->getColumns();
@@ -159,6 +161,8 @@ class Table implements TableInterface
             'many' => false,
             'pivot' => null,
             'pivot_keymap' => [],
+            'sql' => $sql,
+            'par' => $par
         ];
 
         return $this;
@@ -172,7 +176,7 @@ class Table implements TableInterface
      * @param  string|array  $toTableColumn the column (or columns) in the foreign table
      * @return self
      */
-    public function hasMany($toTable, $name = null, $toTableColumn = null)
+    public function hasMany($toTable, $name = null, $toTableColumn = null, $sql = null, array $par = [])
     {
         $toTable = $this->getRelatedTable($toTable);
         $columns = $toTable->definition->getColumns();
@@ -209,6 +213,8 @@ class Table implements TableInterface
             'many' => true,
             'pivot' => null,
             'pivot_keymap' => [],
+            'sql' => $sql,
+            'par' => $par
         ];
 
         return $this;
@@ -222,7 +228,7 @@ class Table implements TableInterface
      * @param  string|array  $toTableColumn the column (or columns) in the current table
      * @return self
      */
-    public function belongsTo($toTable, $name = null, $localColumn = null)
+    public function belongsTo($toTable, $name = null, $localColumn = null, $sql = null, array $par = [])
     {
         $toTable = $this->getRelatedTable($toTable);
         $columns = $this->definition->getColumns();
@@ -259,6 +265,8 @@ class Table implements TableInterface
             'many' => false,
             'pivot' => null,
             'pivot_keymap' => [],
+            'sql' => $sql,
+            'par' => $par
         ];
 
         return $this;
@@ -334,6 +342,8 @@ class Table implements TableInterface
             'many' => true,
             'pivot' => $pivot,
             'pivot_keymap' => $pivotKeymap,
+            'sql' => null,
+            'par' => []
         ];
 
         return $this;
@@ -380,6 +390,7 @@ class Table implements TableInterface
             }
         }
         $sql = 'SELECT '.implode(', ', array_unique($fields)).' FROM '.$this->table.' AS t ';
+        $par = $this->params;
 
         foreach ($this->joined as $k => $v) {
             if ($this->relations[$k]['pivot']) {
@@ -402,6 +413,10 @@ class Table implements TableInterface
                 foreach ($this->relations[$k]['keymap'] as $kk => $vv) {
                     $tmp[] = 't.'.$kk.' = '.$k.'.'.$vv.' ';
                 }
+                if ($this->relations[$k]['sql']) {
+                    $tmp[] = $this->relations[$k]['sql'] . ' ';
+                    $par = array_merge($par, $this->relations[$k]['par']);
+                }
                 $sql .= implode(' AND ', $tmp);
             }
         }
@@ -421,7 +436,7 @@ class Table implements TableInterface
         if ((int) $limit && (int) $offset) {
             $sql .= 'OFFSET '.(int) $offset;
         }
-        $this->result = $this->database->get($sql, $this->params, null, false, 'assoc', false);
+        $this->result = $this->database->get($sql, $par, null, false, 'assoc', false);
         $this->ext = [];
 
         return $this;
@@ -530,6 +545,7 @@ class Table implements TableInterface
     {
         $sql = 'SELECT COUNT(DISTINCT t.'.implode(', t.', $this->definition->getPrimaryKey()).') '.
                 'FROM '.$this->definition->getName().' AS t ';
+        $par = $this->params;
         foreach ($this->joined as $k => $v) {
             if ($this->relations[$k]['pivot']) {
                 $sql .= 'LEFT JOIN '.$this->relations[$k]['pivot'].' AS '.$k.'_pivot ON ';
@@ -551,6 +567,10 @@ class Table implements TableInterface
                 foreach ($this->relations[$k]['keymap'] as $kk => $vv) {
                     $tmp[] = 't.'.$kk.' = '.$k.'.'.$vv.' ';
                 }
+                if ($this->relations[$k]['sql']) {
+                    $tmp[] = $this->relations[$k]['sql'] . ' ';
+                    $par = array_merge($par, $this->relations[$k]['par']);
+                }
                 $sql .= implode(' AND ', $tmp);
             }
         }
@@ -558,7 +578,7 @@ class Table implements TableInterface
             $sql .= 'WHERE '.implode(' AND ', $this->filter).' ';
         }
 
-        return $this->database->one($sql, $this->params);
+        return $this->database->one($sql, $par);
     }
     /**
      * Clears all filters, ordering, etc.
