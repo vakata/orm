@@ -362,7 +362,7 @@ class Table implements TableInterface
             foreach ($fields as $k => $v) {
                 if (!strpos($v, '.')) {
                     if (in_array($v, $this->definition->getColumns()) || $v === '*') {
-                        $temp[] = 't.'.$v;
+                        $temp[] = $this->table.'.'.$v;
                     }
                 } else {
                     if (preg_match('(^[a-z_0-9]+\.[a-z_0-9*]+$)i', $v)) {
@@ -373,7 +373,7 @@ class Table implements TableInterface
                             $temp[] = $v[1] === '*' ? implode('.', $v) : implode('.', $v).' AS '.implode('___', $v);
                             // add the needed local keys, so that remote keys will work
                             foreach (array_keys($this->relations[$v[0]]['keymap']) as $k) {
-                                $temp[] = 't.'.$k;
+                                $temp[] = $this->table.'.'.$k;
                             }
                         }
                     }
@@ -384,10 +384,10 @@ class Table implements TableInterface
         if (!$fields || !count($fields)) {
             $fields = [];
             foreach ($this->definition->getColumns() as $c) {
-                $fields[] = 't.'.$c;
+                $fields[] = $this->table.'.'.$c;
             }
         }
-        $sql = 'SELECT '.implode(', ', array_unique($fields)).' FROM '.$this->table.' AS t ';
+        $sql = 'SELECT '.implode(', ', array_unique($fields)).' FROM '.$this->table.' AS '.$this->table.' ';
         $par = $this->params;
 
         foreach ($this->relations as $k => $v) {
@@ -395,7 +395,7 @@ class Table implements TableInterface
                 $sql .= 'LEFT JOIN '.$v['pivot'].' AS '.$k.'_pivot ON ';
                 $tmp = [];
                 foreach ($v['keymap'] as $kk => $vv) {
-                    $tmp[] = 't.'.$kk.' = '.$k.'_pivot.'.$vv.' ';
+                    $tmp[] = $this->table.'.'.$kk.' = '.$k.'_pivot.'.$vv.' ';
                 }
                 $sql .= implode(' AND ', $tmp);
 
@@ -409,7 +409,7 @@ class Table implements TableInterface
                 $sql .= 'LEFT JOIN '.$v['table']->definition->getName().' AS '.$k.' ON ';
                 $tmp = [];
                 foreach ($v['keymap'] as $kk => $vv) {
-                    $tmp[] = 't.'.$kk.' = '.$k.'.'.$vv.' ';
+                    $tmp[] = $this->table.'.'.$kk.' = '.$k.'.'.$vv.' ';
                 }
                 if ($v['sql']) {
                     $tmp[] = $v['sql'] . ' ';
@@ -423,7 +423,7 @@ class Table implements TableInterface
             $sql .= 'WHERE '.implode(' AND ', $this->filter).' ';
         }
         if (count($this->relations)) {
-            $sql .= 'GROUP BY t.'.implode(', t.', $this->definition->getPrimaryKey()).' ';
+            $sql .= 'GROUP BY '.$this->table.'.'.implode(', '.$this->table.'.', $this->definition->getPrimaryKey()).' ';
         }
         if ($this->order) {
             $sql .= 'ORDER BY '.$this->order.' ';
@@ -510,7 +510,7 @@ class Table implements TableInterface
     {
         $column = explode('.', $column, 2);
         if (count($column) === 1 && in_array($column[0], $this->definition->getColumns())) {
-            $column = 't.'.$column[0];
+            $column = $this->table.'.'.$column[0];
         } elseif (count($column) === 2 &&
             isset($this->relations[$column[0]]) &&
             in_array($column[1], $this->relations[$column[0]]['table']->definition->getColumns())
@@ -539,15 +539,15 @@ class Table implements TableInterface
      */
     public function count()
     {
-        $sql = 'SELECT COUNT(DISTINCT t.'.implode(', t.', $this->definition->getPrimaryKey()).') '.
-                'FROM '.$this->definition->getName().' AS t ';
+        $sql = 'SELECT COUNT(DISTINCT '.$this->table.'.'.implode(', '.$this->table.'.', $this->definition->getPrimaryKey()).') '.
+                'FROM '.$this->definition->getName().' AS '.$this->table.' ';
         $par = $this->params;
         foreach ($this->relations as $k => $v) {
             if ($v['pivot']) {
                 $sql .= 'LEFT JOIN '.$v['pivot'].' AS '.$k.'_pivot ON ';
                 $tmp = [];
                 foreach ($v['keymap'] as $kk => $vv) {
-                    $tmp[] = 't.'.$kk.' = '.$k.'_pivot.'.$vv.' ';
+                    $tmp[] = $this->table.'.'.$kk.' = '.$k.'_pivot.'.$vv.' ';
                 }
                 $sql .= implode(' AND ', $tmp);
 
@@ -561,7 +561,7 @@ class Table implements TableInterface
                 $sql .= 'LEFT JOIN '.$v['table']->definition->getName().' AS '.$k.' ON ';
                 $tmp = [];
                 foreach ($v['keymap'] as $kk => $vv) {
-                    $tmp[] = 't.'.$kk.' = '.$k.'.'.$vv.' ';
+                    $tmp[] = $this->table.'.'.$kk.' = '.$k.'.'.$vv.' ';
                 }
                 if ($v['sql']) {
                     $tmp[] = $v['sql'] . ' ';
