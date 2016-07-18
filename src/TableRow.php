@@ -91,6 +91,10 @@ class TableRow implements TableRowInterface
         $relation = $this->relations[$key];
         $table = clone $relation['table'];
 
+        if ($relation['sql']) {
+            $table->where($relation['sql'], $relation['par']);
+        }
+
         if ($relation['pivot']) {
             $sql = 'SELECT '.implode(',', array_keys($relation['pivot_keymap'])).' FROM '.$relation['pivot'].' WHERE ';
             $par = [];
