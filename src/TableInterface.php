@@ -2,31 +2,20 @@
 
 namespace vakata\orm;
 
-interface TableInterface extends \Iterator, \ArrayAccess, \Countable, \JsonSerializable
+interface TableInterface extends \Iterator, \ArrayAccess, \Countable
 {
-    public function getDatabase();
-    public function getDefinition();
+    public function getDefinition() : TableDefinition;
 
-    public function getRelations();
-    public function getRelationKeys();
+    public function filter(string $column, $value) : TableInterface;
+    public function sort(string $column, bool $desc = false) : TableInterface;
+    public function paginate(int $page = 1, int $perPage = 25) : TableInterface;
+    public function reset() : TableInterface;
 
-    public function hasOne($toTable, $name = null, $toTableColumn = null);
-    public function hasMany($toTable, $name = null, $toTableColumn = null);
-    public function belongsTo($toTable, $name = null, $toTableColumn = null);
-    public function manyToMany($toTable, $pivot, $name = null, $toTableColumn = null, $localColumn = null);
+    public function where(string $sql, array $params = []) : TableInterface;
+    public function order(string $sql, array $params = []) : TableInterface;
+    public function limit(int $limit, int $offset = 0) : TableInterface;
 
-    public function select($limit = 0, $offset = 0, array $fields = null);
-    public function where($sql, array $params = []);
-    public function order($order, $raw = false);
-
-    public function filter($column, $value);
-
-    public function count();
-    public function reset();
-
-    public function toArray($full = true);
-
-    public function create(array $data = []);
-    public function save(array $data = []);
-    public function delete();
+    public function create(array $data = []) : TableRowInterface;
+    public function save(TableRowInterface $row) : TableRowInterface;
+    public function delete(TableRowInterface $row) : TableRowInterface;
 }

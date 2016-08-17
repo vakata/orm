@@ -67,26 +67,26 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 	}
 
 	public function testConstruct() {
-		self::$author   = new \vakata\orm\Table(self::$db, 'author');
-		self::$tag      = new \vakata\orm\Table(self::$db, 'tag');
-		self::$book_tag = new \vakata\orm\Table(self::$db, 'book_tag');
-		self::$book     = new \vakata\orm\Table(self::$db, 'book');
+		self::$author   = new \vakata\orm\Table(self::$db, \vakata\orm\TableDefinition::fromTableName(self::$db, 'author'));
+		self::$tag      = new \vakata\orm\Table(self::$db, \vakata\orm\TableDefinition::fromTableName(self::$db, 'tag'));
+		self::$book_tag = new \vakata\orm\Table(self::$db, \vakata\orm\TableDefinition::fromTableName(self::$db, 'book_tag'));
+		self::$book     = new \vakata\orm\Table(self::$db, \vakata\orm\TableDefinition::fromTableName(self::$db, 'book'));
 
-		self::$book->manyToMany(self::$tag, 'book_tag', 'tags', 'book_id', 'tag_id');
+		self::$book->getDefinition()->manyToMany(self::$tag->getDefinition(), \vakata\orm\TableDefinition::fromTableName(self::$db, 'book_tag'), 'tags', 'book_id', 'tag_id');
 		//self::$book->belongsTo(self::$book, 'author', 'author_id');
-		self::$author->hasMany(self::$book, 'books', 'author_id');
+		self::$author->getDefinition()->hasMany(self::$book->getDefinition(), 'books', 'author_id');
 	}
 
 	public function testHasOne() {
-		$book = new \vakata\orm\Table(self::$db, 'book');
-		$author = new \vakata\orm\Table(self::$db, 'author');
-		$author->hasOne($book, 'book', 'author_id');
+		$book = new \vakata\orm\Table(self::$db, \vakata\orm\TableDefinition::fromTableName(self::$db, 'book'));
+		$author = new \vakata\orm\Table(self::$db, \vakata\orm\TableDefinition::fromTableName(self::$db, 'author'));
+		$author->getDefinition()->hasOne($book->getDefinition(), 'book', 'author_id');
 		$this->assertEquals($author[0]->book->name, 'Equal rites');
 	}
 	public function testBelongsTo() {
-		$book = new \vakata\orm\Table(self::$db, 'book');
-		$author = new \vakata\orm\Table(self::$db, 'author');
-		$book->belongsTo($author, 'author', 'author_id');
+		$book = new \vakata\orm\Table(self::$db, \vakata\orm\TableDefinition::fromTableName(self::$db, 'book'));
+		$author = new \vakata\orm\Table(self::$db, \vakata\orm\TableDefinition::fromTableName(self::$db, 'author'));
+		$book->getDefinition()->belongsTo($author->getDefinition(), 'author', 'author_id');
 		$this->assertEquals($book[0]->author->name, 'Terry Pratchett');
 		$book->filter('author.name', 'Terry Pratchett');
 		$this->assertEquals($book->count(), 1);

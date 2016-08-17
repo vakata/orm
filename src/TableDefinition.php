@@ -4,119 +4,331 @@ namespace vakata\orm;
 
 use vakata\database\DatabaseInterface;
 
-/**
- * TableDefinition is used when working with the \vakata\orm\Table class.
- * The class provides information about a table in the database, and autocollects that information when created.
- */
-class TableDefinition implements TableDefinitionInterface, \JsonSerializable
+class TableDefinition
 {
-    protected $definition = [];
-    /**
-     * Create an instance.
-     * @method __construct
-     * @param  \vakata\database\DatabaseInterface $database a database instance
-     * @param  string            $table    the name of the table to be processed
-     */
-    public function __construct(DatabaseInterface $database, $table)
+    protected $data = [];
+    protected $relations = [];
+
+    public static function fromTableName(DatabaseInterface $db, string $table)
     {
-        $this->definition = [
-            'name' => $table,
-            'primary_key' => [],
-            'columns' => [],
-            'definitions' => [],
-            'indexed' => []
-        ];
-        switch ($database->driver()) {
+        $definition = new TableDefinition($table);
+        $columns = [];
+        $primary = [];
+        switch ($db->driver()) {
             case 'mysql':
             case 'mysqli':
-                foreach ($database->all('SHOW FULL COLUMNS FROM '.$table) as $data) {
-                    $this->definition['columns'][] = $data['Field'];
-                    $this->definition['definitions'][$data['Field']] = $data;
+                foreach ($db->all('SHOW FULL COLUMNS FROM '.$table) as $data) {
+                    $columns[$data['Field']] = $data;
                     if ($data['Key'] == 'PRI') {
-                        $this->definition['primary_key'][] = $data['Field'];
+                        $primary[] = $data['Field'];
                     }
                 }
-                foreach ($database->all('SHOW INDEX FROM '.$table.' WHERE Index_type = \'FULLTEXT\'') as $data) {
-                    $this->definition['indexed'][] = $data['Column_name'];
-                }
-                $this->definition['indexed'] = array_unique($this->definition['indexed']);
                 break;
-            /*
             case 'postgre':
             case 'oracle':
-                $this->definition['definitions'] = $database->all(
-                    'SELECT * FROM information_schema.columns WHERE table_name = ? ',
-                    [$table],
+                $columns = $db->all(
+                    'SELECT * FROM information_schema.columns WHERE table_name = ?',
+                    [ $table ],
                     'column_name'
                 );
-                $this->definition['columns'] = array_keys($this->definition['definitions']);
-                $tmp = $database->one(
+                $tmp = $db->one(
                     'SELECT constraint_name FROM information_schema.table_constraints '.
                     'WHERE table_name = ? AND constraint_type = ?',
-                    [$table, 'PRIMARY KEY']
+                    [ $table, 'PRIMARY KEY' ]
                 );
                 if ($tmp) {
-                    $this->definition['primary_key'] = $database->all(
-                        'SELECT column_name FROM information_schema.key_column_usage '.
-                        'WHERE table_name = ? AND constraint_name = ?',
-                        [$table, $tmp]
+                    $primary = $db->all(
+                        'SELECT column_name FROM information_schema.key_column_usage WHERE table_name = ? AND constraint_name = ?',
+                        [ $table, $tmp ]
                     );
                 }
                 break;
-            */
             default:
                 throw new ORMException('Driver is not supported: '.$database->driver(), 500);
         }
+        // TODO: foreign keys
+        return $definition
+            ->addColumns($columns)
+            ->setPrimaryKey($primary);
     }
-    public function __get($key)
-    {
-        if (isset($this->definition[$key])) {
-            return $this->definition[$key];
-        }
-        if (method_exists($this, 'get'.ucfirst($key))) {
-            return call_user_func([$this, 'get'.ucfirst($key)]);
-        }
 
-        return;
+    public function __construct(string $name)
+    {
+        $this->data = [
+            'name'    => $name,
+            'columns' => [],
+            'primary' => []
+        ];
+        $this->relations = [];
     }
-    /**
-     * Get the table name.
-     * @method getName
-     * @return string  the name of the table
-     */
+    public function addColumn(string $column, array $definition = []) : TableDefinition
+    {
+        $this->data['columns'][$column] = $definition;
+        return $this;
+    }
+    public function addColumns(array $columns) : TableDefinition
+    {
+        foreach ($columns as $column => $definition) {
+            if (is_numeric($column) && is_string($definition)) {
+                $this->addColumn($definition, []);
+            } else {
+                $this->addColumn($column, $definition);
+            }
+        }
+        return $this;
+    }
+    public function setPrimaryKey($column) : TableDefinition
+    {
+        if (!is_array($column)) {
+            $column = [ $column ];
+        }
+        $this->data['primary'] = $column;
+        return $this;
+    }
     public function getName()
     {
-        return $this->definition['name'];
+        return $this->data['name'];
     }
-    /**
-     * Get the columns forming the primary key.
-     * @method getPrimaryKey
-     * @return array        array of primary key columns
-     */
-    public function getPrimaryKey()
+    public function getColumn($column)
     {
-        return $this->definition['primary_key'];
+        return $this->data['columns'][$column] ?? null;
     }
-    /**
-     * Get a list of columns.
-     * @method getColumns
-     * @return array     array of strings of column names
-     */
     public function getColumns()
     {
-        return $this->definition['columns'];
+        return array_keys($this->data['columns']);
     }
-    /**
-     * Get the current definition as an array.
-     * @method toArray
-     * @return array  the definition
-     */
-    public function toArray()
+    public function getFullColumns()
     {
-        return $this->definition;
+        return $this->data['columns'];
     }
-    public function jsonSerialize()
+    public function getPrimaryKey()
     {
-        return $this->toArray();
+        return $this->data['primary'];
+    }
+    public function hasOne(
+        TableDefinition $toTable,
+        string $name = null,
+        $toTableColumn = null,
+        string $sql = null,
+        array $par = []
+    ) : TableDefinition
+    {
+        $columns = $toTable->getColumns();
+
+        $keymap = [];
+        if (!isset($toTableColumn)) {
+            $toTableColumn = [];
+        }
+        if (!is_array($toTableColumn)) {
+            $toTableColumn = [$toTableColumn];
+        }
+        foreach ($this->getPrimaryKey() as $k => $pkField) {
+            $key = null;
+            if (isset($toTableColumn[$pkField])) {
+                $key = $toTableColumn[$pkField];
+            } elseif (isset($toTableColumn[$k])) {
+                $key = $toTableColumn[$k];
+            } else {
+                $key = $this->getName().'_'.$pkField;
+            }
+            if (!in_array($key, $columns)) {
+                throw new ORMException('Missing foreign key mapping');
+            }
+            $keymap[$pkField] = $key;
+        }
+
+        if (!isset($name)) {
+            $name = $toTable->getName() . '_' . implode('_', array_keys($keymap));
+        }
+        $this->relations[$name] = [
+            'name' => $name,
+            'table' => $toTable,
+            'keymap' => $keymap,
+            'many' => false,
+            'pivot' => null,
+            'pivot_keymap' => [],
+            'sql' => $sql,
+            'par' => $par
+        ];
+        return $this;
+    }
+    public function hasMany(
+        TableDefinition $toTable,
+        string $name = null,
+        $toTableColumn = null,
+        $sql = null,
+        array $par = []
+    ) : TableDefinition
+    {
+        $columns = $toTable->getColumns();
+
+        $keymap = [];
+        if (!isset($toTableColumn)) {
+            $toTableColumn = [];
+        }
+        if (!is_array($toTableColumn)) {
+            $toTableColumn = [$toTableColumn];
+        }
+        foreach ($this->getPrimaryKey() as $k => $pkField) {
+            $key = null;
+            if (isset($toTableColumn[$pkField])) {
+                $key = $toTableColumn[$pkField];
+            } elseif (isset($toTableColumn[$k])) {
+                $key = $toTableColumn[$k];
+            } else {
+                $key = $this->getName().'_'.$pkField;
+            }
+            if (!in_array($key, $columns)) {
+                throw new ORMException('Missing foreign key mapping');
+            }
+            $keymap[$pkField] = $key;
+        }
+
+        if (!isset($name)) {
+            $name = $toTable->getName().'_'.implode('_', array_keys($keymap));
+        }
+        $this->relations[$name] = [
+            'name' => $name,
+            'table' => $toTable,
+            'keymap' => $keymap,
+            'many' => true,
+            'pivot' => null,
+            'pivot_keymap' => [],
+            'sql' => $sql,
+            'par' => $par
+        ];
+        return $this;
+    }
+    public function belongsTo(
+        TableDefinition $toTable,
+        string $name = null,
+        $localColumn = null,
+        $sql = null,
+        array $par = []
+    ) : TableDefinition
+    {
+        $columns = $this->getColumns();
+
+        $keymap = [];
+        if (!isset($localColumn)) {
+            $localColumn = [];
+        }
+        if (!is_array($localColumn)) {
+            $localColumn = [$localColumn];
+        }
+        foreach ($toTable->getPrimaryKey() as $k => $pkField) {
+            $key = null;
+            if (isset($localColumn[$pkField])) {
+                $key = $localColumn[$pkField];
+            } elseif (isset($localColumn[$k])) {
+                $key = $localColumn[$k];
+            } else {
+                $key = $toTable->getName().'_'.$pkField;
+            }
+            if (!in_array($key, $columns)) {
+                throw new ORMException('Missing foreign key mapping');
+            }
+            $keymap[$key] = $pkField;
+        }
+
+        if (!isset($name)) {
+            $name = $toTable->getName().'_'.implode('_', array_keys($keymap));
+        }
+        $this->relations[$name] = [
+            'name' => $name,
+            'table' => $toTable,
+            'keymap' => $keymap,
+            'many' => false,
+            'pivot' => null,
+            'pivot_keymap' => [],
+            'sql' => $sql,
+            'par' => $par
+        ];
+        return $this;
+    }
+    public function manyToMany(
+        TableDefinition $toTable,
+        TableDefinition $pivot,
+        $name = null,
+        $toTableColumn = null,
+        $localColumn = null
+    ) : TableDefinition
+    {
+        $pivotColumns = $pivot->getColumns();
+
+        $keymap = [];
+        if (!isset($toTableColumn)) {
+            $toTableColumn = [];
+        }
+        if (!is_array($toTableColumn)) {
+            $toTableColumn = [$toTableColumn];
+        }
+        foreach ($this->getPrimaryKey() as $k => $pkField) {
+            $key = null;
+            if (isset($toTableColumn[$pkField])) {
+                $key = $toTableColumn[$pkField];
+            } elseif (isset($toTableColumn[$k])) {
+                $key = $toTableColumn[$k];
+            } else {
+                $key = $this->getName().'_'.$pkField;
+            }
+            if (!in_array($key, $pivotColumns)) {
+                throw new ORMException('Missing foreign key mapping');
+            }
+            $keymap[$pkField] = $key;
+        }
+
+        $pivotKeymap = [];
+        if (!isset($localColumn)) {
+            $localColumn = [];
+        }
+        if (!is_array($localColumn)) {
+            $localColumn = [$localColumn];
+        }
+        foreach ($toTable->getPrimaryKey() as $k => $pkField) {
+            $key = null;
+            if (isset($localColumn[$pkField])) {
+                $key = $localColumn[$pkField];
+            } elseif (isset($localColumn[$k])) {
+                $key = $localColumn[$k];
+            } else {
+                $key = $toTable->getName().'_'.$pkField;
+            }
+            if (!in_array($key, $pivotColumns)) {
+                throw new ORMException('Missing foreign key mapping');
+            }
+            $pivotKeymap[$key] = $pkField;
+        }
+
+        if (!isset($name)) {
+            $name = $toTable->getName().'_'.implode('_', array_keys($keymap));
+        }
+        $this->relations[$name] = [
+            'name' => $name,
+            'table' => $toTable,
+            'keymap' => $keymap,
+            'many' => true,
+            'pivot' => $pivot,
+            'pivot_keymap' => $pivotKeymap,
+            'sql' => null,
+            'par' => []
+        ];
+        return $this;
+    }
+    public function hasRelations() : bool
+    {
+        return count($this->relations) > 0;
+    }
+    public function getRelations() : array
+    {
+        return $this->relations;
+    }
+    public function hasRelation(string $name) : bool
+    {
+        return isset($this->relations[$name]);
+    }
+    public function getRelation(string $name) : array
+    {
+        return $this->relations[$name] ?? null;
     }
 }

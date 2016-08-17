@@ -2,11 +2,7 @@
 
 namespace vakata\orm;
 
-interface TableRowInterface extends \JsonSerializable
+interface TableRowInterface
 {
-    public function getID();
     public function toArray($full = true);
-    public function fromArray(array $data);
-    public function save();
-    public function delete();
 }
