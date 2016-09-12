@@ -23,7 +23,7 @@
     ],
     "require": {
         "php" : ">=5.4.0",
-        "vakata/database" : ">=1.0.1"
+        "vakata/database" : ">=1.2.1"
     },
     "require-dev": {
         "phpunit/phpunit" : "4.*",
