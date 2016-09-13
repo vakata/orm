@@ -18,7 +18,7 @@ class Manager
         $this->db = $db;
         $this->creator = $creator !== null ?
             $creator :
-            function ($class) { return new $class; };
+            function ($class) { return new $class(); };
     }
 
     public function addDefinition(TableDefinition $definition)
