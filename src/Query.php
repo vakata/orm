@@ -309,7 +309,7 @@ class Query
         $par = [$insert];
         if ($update) {
             $sql .= 'ON DUPLICATE KEY UPDATE ';
-            $sql .= implode(', ', array_map(function () { return $v . ' = ?'; }, array_keys($insert))) . ' ';
+            $sql .= implode(', ', array_map(function ($v) { return $v . ' = ?'; }, array_keys($insert))) . ' ';
             $par  = array_merge($par, $insert);
         }
         return $this->db->query($sql, $par)->insertId();

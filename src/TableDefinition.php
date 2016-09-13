@@ -63,11 +63,11 @@ class TableDefinition
                     // resulting in a "hasMany" or "manyToMany" relationship (if a pivot table is detected)
                     $relations = [];
                     foreach ($db->all(
-                            "SELECT TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_COLUMN_NAME
-                             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-                             WHERE TABLE_SCHEMA = ? AND REFERENCED_TABLE_SCHEMA = ? AND REFERENCED_TABLE_NAME = ?",
-                            [ $db->name(), $db->name(), $table ]
-                        ) as $relation) {
+                        "SELECT TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_COLUMN_NAME
+                         FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                         WHERE TABLE_SCHEMA = ? AND REFERENCED_TABLE_SCHEMA = ? AND REFERENCED_TABLE_NAME = ?",
+                        [ $db->name(), $db->name(), $table ]
+                    ) as $relation) {
                         $relations[$relation['CONSTRAINT_NAME']]['table'] = $relation['TABLE_NAME'];
                         $relations[$relation['CONSTRAINT_NAME']]['keymap'][$relation['REFERENCED_COLUMN_NAME']] = $relation['COLUMN_NAME'];
                     }
@@ -82,12 +82,16 @@ class TableDefinition
                         $foreign = [];
                         $usedcol = [];
                         if (count($columns)) {
-                                foreach ($db->all(
-                                    "SELECT TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_COLUMN_NAME, REFERENCED_TABLE_NAME
-                                     FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-                                     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME IN (??) AND REFERENCED_TABLE_NAME IS NOT NULL",
-                                    [ $db->name(), $data['table'], $columns ]
-                                ) as $relation) {
+                            foreach ($db->all(
+                                "SELECT
+                                    TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, 
+                                    REFERENCED_COLUMN_NAME, REFERENCED_TABLE_NAME
+                                 FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                                 WHERE
+                                    TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME IN (??) AND
+                                    REFERENCED_TABLE_NAME IS NOT NULL",
+                                [ $db->name(), $data['table'], $columns ]
+                            ) as $relation) {
                                 $foreign[$relation['CONSTRAINT_NAME']]['table'] = $relation['REFERENCED_TABLE_NAME'];
                                 $foreign[$relation['CONSTRAINT_NAME']]['keymap'][$relation['COLUMN_NAME']] = $relation['REFERENCED_COLUMN_NAME'];
                                 $usedcol[] = $relation['COLUMN_NAME'];
@@ -123,11 +127,11 @@ class TableDefinition
                     // resulting in a "belongsTo" relationship
                     $relations = [];
                     foreach ($db->all(
-                            "SELECT TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
-                             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-                             WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND REFERENCED_TABLE_NAME IS NOT NULL",
-                            [ $db->name(), $table ]
-                        ) as $relation) {
+                        "SELECT TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+                         FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                         WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND REFERENCED_TABLE_NAME IS NOT NULL",
+                        [ $db->name(), $table ]
+                    ) as $relation) {
                         $relations[$relation['CONSTRAINT_NAME']]['table'] = $relation['REFERENCED_TABLE_NAME'];
                         $relations[$relation['CONSTRAINT_NAME']]['keymap'][$relation['COLUMN_NAME']] = $relation['REFERENCED_COLUMN_NAME'];
                     }
@@ -210,8 +214,7 @@ class TableDefinition
         $toTableColumn = null,
         string $sql = null,
         array $par = []
-    ) : TableDefinition
-    {
+    ) : TableDefinition {
         $columns = $toTable->getColumns();
 
         $keymap = [];
@@ -257,8 +260,7 @@ class TableDefinition
         $toTableColumn = null,
         $sql = null,
         array $par = []
-    ) : TableDefinition
-    {
+    ) : TableDefinition {
         $columns = $toTable->getColumns();
 
         $keymap = [];
@@ -304,8 +306,7 @@ class TableDefinition
         $localColumn = null,
         $sql = null,
         array $par = []
-    ) : TableDefinition
-    {
+    ) : TableDefinition {
         $columns = $this->getColumns();
 
         $keymap = [];
@@ -351,8 +352,7 @@ class TableDefinition
         $name = null,
         $toTableColumn = null,
         $localColumn = null
-    ) : TableDefinition
-    {
+    ) : TableDefinition {
         $pivotColumns = $pivot->getColumns();
 
         $keymap = [];

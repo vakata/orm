@@ -9,8 +9,13 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     protected $manager;
     protected $current;
 
-    public function __construct(Query $query, Manager $manager, string $class, array $current = null, bool $single = false)
-    {
+    public function __construct(
+        Query $query,
+        Manager $manager,
+        string $class,
+        array $current = null,
+        bool $single = false
+    ) {
         $this->class = $class;
         $this->query = $query;
         $this->single = $single;
@@ -95,7 +100,12 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
         }
         $item = $this->current[$offset];
         if (is_array($item)) {
-            return $this->current[$offset] = $this->manager->entity($this->class, $item, $item, $this->query->getDefinition());
+            return $this->current[$offset] = $this->manager->entity(
+                $this->class,
+                $item,
+                $item,
+                $this->query->getDefinition()
+            );
         }
         return $this->current[$offset];
     }
@@ -121,7 +131,12 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
         }
         $item = current($this->current);
         if (is_array($item)) {
-            return $this->current[$this->key()] = $this->manager->entity($this->class, $item, $item, $this->query->getDefinition());
+            return $this->current[$this->key()] = $this->manager->entity(
+                $this->class,
+                $item,
+                $item,
+                $this->query->getDefinition()
+            );
         }
         return $item;
     }
