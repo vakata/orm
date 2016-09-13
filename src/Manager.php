@@ -3,16 +3,22 @@ namespace vakata\orm;
 
 use vakata\database\DatabaseInterface;
 
+// TODO: relation to the same table using differnt keymaps - in TableDefinition
+
 class Manager
 {
     protected $db;
+    protected $creator;
     protected $classes = [];
     protected $entities = [];
     protected $definitions = [];
 
-    public function __construct(DatabaseInterface $db)
+    public function __construct(DatabaseInterface $db, callable $creator = null)
     {
         $this->db = $db;
+        $this->creator = $creator !== null ?
+            $creator :
+            function ($class) { return new $class; };
     }
 
     public function addDefinition(TableDefinition $definition)
@@ -117,8 +123,7 @@ class Manager
             }
             $data = $data[0];
         }
-        // TODO: add DIContainer here? or callback?
-        $instance = new $class();
+        $instance = call_user_func($this->creator, $class);
         if ($class === Row::CLASS) {
             $instance->__definition = $definition->getName();
         }
@@ -139,7 +144,6 @@ class Manager
                 }
                 if (!$nm) {
                     $nm = $definition->getName();
-                    //$relation['table']->hasRelation($definition->getName())) {
                     $relation['table']->manyToMany(
                         $definition,
                         $relation['pivot'],
@@ -188,9 +192,9 @@ class Manager
         if (!isset($this->entities[$definition->getName()])) {
             $this->entities[$definition->getName()] = [];
         }
-        $org = array_search($entity, $this->entities[$definition->getName()], true);
-        if ($org !== false) {
-            $org = json_decode($orig, true);
+        $old = array_search($entity, $this->entities[$definition->getName()], true);
+        if ($old !== false) {
+            $old = json_decode($orig, true);
         }
         $new = [];
         foreach ($definition->getPrimaryKey() as $field) {
@@ -200,7 +204,7 @@ class Manager
         // gather values from relations and set local fields
         foreach ($definition->getRelations() as $name => $relation) {
             if (count(array_diff(array_keys($relation['keymap']), array_keys($pk)))) {
-                $obj = $entity->{$name}[0]; // maybe save? it could be a new object?
+                $obj = $entity->{$name}[0];
                 foreach ($relation['keymap'] as $local => $remote) {
                     $data[$local] = $obj->{$remote};
                 }
@@ -208,7 +212,7 @@ class Manager
         }
         
         $q = new Query($this->db, $definition);
-        if ($org === false) {
+        if ($old === false) {
             $id = $q->insert($data);
             if ($id !== null && count($definition->getPrimaryKey()) === 1) {
                 $field = current($definition->getPrimaryKey());
@@ -216,22 +220,54 @@ class Manager
                 $new[$field] = $id;
             }
             $this->entities[$definition->getName()][json_encode($new)] = $entity;
-            // TODO: update related objects with the new ID and relation (do not save them), 
-            // nothing to update in DB - its a new record
-
         } else {
-            foreach ($org as $k => $v) {
+            foreach ($old as $k => $v) {
                 $q->where($k, $v);
             }
             $q->update($data);
-            if (json_encode($new) !== json_encode($org)) {
-                unset($this->entities[$definition->getName()][json_encode($org)]);
+            if (json_encode($new) !== json_encode($old)) {
+                unset($this->entities[$definition->getName()][json_encode($old)]);
                 $this->entities[$definition->getName()][json_encode($new)] = $entity;
-                // TODO: update related objects with the new ID and relation and hit the DB?
             }
         }
-        // TODO: gather all pivoted relations and write to pivot table
-        // first drop all rows then write the new ones
+
+        foreach ($definition->getRelations() as $name => $relation) {
+            if (!count(array_diff(array_keys($relation['keymap']), array_keys($pk)))) {
+                if (!$relation['pivot']) {
+                    if ($old === false || json_encode($new) !== json_encode($old)) { // only on new ID
+                        foreach ($entity->{$name} as $obj) {
+                            foreach ($relation['keymap'] as $local => $remote) {
+                                $obj->{$remote} = $new[$local];
+                            }
+                        }
+                        if ($old !== false) {
+                            $query = new Query($this->db, $relation['table']);
+                            $data = [];
+                            foreach ($relation['keymap'] as $local => $remote) {
+                                $query->filter($remote, $old[$local]);
+                                $data[$remote] = $new[$local];
+                            }
+                            $query->update($data);
+                        }
+                    }
+                } else {
+                    $query = new Query($this->db, $relation['pivot']);
+                    $data = [];
+                    foreach ($relation['keymap'] as $local => $remote) {
+                        $query->filter($remote, $new[$local]);
+                        $data[$remote] = $new[$local];
+                    }
+                    $query->delete();
+                    foreach ($entity->{$name} as $obj) {
+                        $query->reset();
+                        foreach ($relation['pivot_keymap'] as $local => $remote) {
+                            $data[$local] = $obj->{$remote};
+                        }
+                        $query->insert($data);
+                    }
+                }
+            }
+        }
         return $new;
     }
     public function delete($entity)
