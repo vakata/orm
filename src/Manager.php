@@ -90,6 +90,39 @@ class Manager
         }
         return $this->entity($class, $args, null, $definition);
     }
+    public function create(string $search, array $data = [], TableDefinition $definition = null)
+    {
+        $class = $this->getClass($search);
+        if (!$class) {
+            $class = Row::CLASS;
+            if (!$definition) {
+                if (!isset($this->definitions[$search])) {
+                    $this->addDefinitionByTableName($search, true);
+                }
+                $definition = $this->definitions[$search];
+            }
+        }
+        if (!$definition) {
+            if (!isset($this->classes[$class])) {
+                throw new ORMException('No definition');
+            }
+            $definition = $this->classes[$class];
+        }
+        $instance = call_user_func($this->creator, $class);
+        if ($class === Row::CLASS) {
+            $instance->__definition = $definition->getName();
+        }
+        foreach ($definition->getColumns() as $column) {
+            $instance->{$column} = $data[$column] ?? null;
+        }
+        foreach ($definition->getRelations() as $name => $relation) {
+            if ($relation['many'] === false && isset($data[$name])) {
+                $data[$name] = [$data[$name]];
+            }
+            $instance->{$name} = $data[$name] ?? null;
+        }
+        return $instance;
+    }
     public function entity(string $class, array $key, array $data = null, TableDefinition $definition = null)
     {
         $class = $this->getClass($class);
@@ -172,8 +205,12 @@ class Manager
     {
         $class = get_class($entity);
         $class = $this->getClass($class);
+        $definition = null;
         if (!$class) {
             $class = Row::CLASS;
+            if ($entity->__definition === null) {
+                throw new ORMException('No definition');
+            }
             $definition = $this->definitions[$entity->__definition];
         }
         if (!$definition) {
@@ -194,7 +231,7 @@ class Manager
         }
         $old = array_search($entity, $this->entities[$definition->getName()], true);
         if ($old !== false) {
-            $old = json_decode($orig, true);
+            $old = json_decode($old, true);
         }
         $new = [];
         foreach ($definition->getPrimaryKey() as $field) {
@@ -203,7 +240,7 @@ class Manager
 
         // gather values from relations and set local fields
         foreach ($definition->getRelations() as $name => $relation) {
-            if (count(array_diff(array_keys($relation['keymap']), array_keys($pk)))) {
+            if (count(array_diff(array_keys($relation['keymap']), array_keys($new)))) {
                 $obj = $entity->{$name}[0];
                 foreach ($relation['keymap'] as $local => $remote) {
                     $data[$local] = $obj->{$remote};
@@ -222,7 +259,7 @@ class Manager
             $this->entities[$definition->getName()][json_encode($new)] = $entity;
         } else {
             foreach ($old as $k => $v) {
-                $q->where($k, $v);
+                $q->filter($k, $v);
             }
             $q->update($data);
             if (json_encode($new) !== json_encode($old)) {
@@ -232,12 +269,14 @@ class Manager
         }
 
         foreach ($definition->getRelations() as $name => $relation) {
-            if (!count(array_diff(array_keys($relation['keymap']), array_keys($pk)))) {
+            if (!count(array_diff(array_keys($relation['keymap']), array_keys($new)))) {
                 if (!$relation['pivot']) {
                     if ($old === false || json_encode($new) !== json_encode($old)) { // only on new ID
-                        foreach ($entity->{$name} as $obj) {
-                            foreach ($relation['keymap'] as $local => $remote) {
-                                $obj->{$remote} = $new[$local];
+                        if (is_array($entity->{$name}) || $entity->{$name} instanceof \Traversable) {
+                            foreach ($entity->{$name} as $obj) {
+                                foreach ($relation['keymap'] as $local => $remote) {
+                                    $obj->{$remote} = $new[$local];
+                                }
                             }
                         }
                         if ($old !== false) {
@@ -258,12 +297,14 @@ class Manager
                         $data[$remote] = $new[$local];
                     }
                     $query->delete();
-                    foreach ($entity->{$name} as $obj) {
-                        $query->reset();
-                        foreach ($relation['pivot_keymap'] as $local => $remote) {
-                            $data[$local] = $obj->{$remote};
+                    if (is_array($entity->{$name}) || $entity->{$name} instanceof \Traversable) {
+                        foreach ($entity->{$name} as $obj) {
+                            $query->reset();
+                            foreach ($relation['pivot_keymap'] as $local => $remote) {
+                                $data[$local] = $obj->{$remote};
+                            }
+                            $query->insert($data);
                         }
-                        $query->insert($data);
                     }
                 }
             }

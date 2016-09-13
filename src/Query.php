@@ -329,8 +329,8 @@ class Query
         }
         $sql = 'UPDATE '.$table.' SET ';
         $par = [];
-        $sql .= implode(', ', array_map(function () { return $v . ' = ?'; }, array_keys($update))) . ' ';
-        $par = array_merge($par, array_values($insert));
+        $sql .= implode(', ', array_map(function ($v) { return $v . ' = ?'; }, array_keys($update))) . ' ';
+        $par = array_merge($par, array_values($update));
         if (count($this->where)) {
             $sql .= 'WHERE ';
             $tmp = [];
