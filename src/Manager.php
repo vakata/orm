@@ -5,6 +5,9 @@ use vakata\database\DatabaseInterface;
 
 // TODO: relation to the same table using differnt keymaps - in TableDefinition
 
+/**
+ * Manager ORM class
+ */
 class Manager
 {
     protected $db;
@@ -13,6 +16,12 @@ class Manager
     protected $entities = [];
     protected $definitions = [];
 
+    /**
+     * Create an instance
+     * @method __construct
+     * @param  DatabaseInterface $db      the database connection
+     * @param  callable|null     $creator optional function used to create all necessary classes
+     */
     public function __construct(DatabaseInterface $db, callable $creator = null)
     {
         $this->db = $db;
@@ -22,7 +31,12 @@ class Manager
                 return new $class();
             };
     }
-
+    /**
+     * Add a table definition to the manager (most of the time you can rely on the autodetected definitions)
+     * @method addDefinition
+     * @param  TableDefinition $definition the definition
+     * @return  self
+     */
     public function addDefinition(TableDefinition $definition)
     {
         if (!isset($this->definitions[$definition->getName()])) {
@@ -30,6 +44,12 @@ class Manager
         }
         return $this;
     }
+    /**
+     * Autodetect a definition by table name and add it to the manager.
+     * @method addDefinitionByTableName
+     * @param  string                   $table the table to analyze
+     * @return  self
+     */
     public function addDefinitionByTableName(string $table)
     {
         if (!isset($this->definitions[$table])) {
@@ -37,10 +57,23 @@ class Manager
         }
         return $this;
     }
+    /**
+     * Get an existing definition.
+     * @method getDefinition
+     * @param  string        $search the table name
+     * @return TableDefinition|null                the definition of null if not found
+     */
     public function getDefinition(string $search)
     {
         return $this->definitions[$search] ?? null;
     }
+    /**
+     * Add a class by name and link it to a definition
+     * @method addClass
+     * @param  string          $class      the class to create when reading from the table
+     * @param  TableDefinition $definition the table definition associated with the class
+     * @return  self
+     */
     public function addClass(string $class, TableDefinition $definition)
     {
         if (!isset($this->definitions[$table->getName()])) {
@@ -49,6 +82,13 @@ class Manager
         $this->classes[$class] = $this->definitions[$definition->getName()];
         return $this;
     }
+    /**
+     * Add a class by name and link it to a table name
+     * @method addClassByTableName
+     * @param  string          $class      the class to create when reading from the table
+     * @param  string          $table      the table name associated with the class
+     * @return  self
+     */
     public function addClassByTableName(string $class, string $table)
     {
         if (!isset($this->definitions[$table])) {
@@ -92,6 +132,14 @@ class Manager
         }
         return $this->entity($class, $args, null, $definition);
     }
+    /**
+     * Create an instance
+     * @method create
+     * @param  string               $search     the type of instance to create (class name, table name, etc)
+     * @param  array                $data       optional array of data to populate with (defaults to an empty array)
+     * @param  TableDefinition|null $definition optional explicit definition to use
+     * @return mixed                            the newly created instance
+     */
     public function create(string $search, array $data = [], TableDefinition $definition = null)
     {
         $class = $this->getClass($search);
@@ -125,6 +173,15 @@ class Manager
         }
         return $instance;
     }
+    /**
+     * Create an entity
+     * @method entity
+     * @param  string               $class      the class name
+     * @param  array                $key        the ID of the entity
+     * @param  array|null           $data       optional data to populate with, if missing it is gathered from DB
+     * @param  TableDefinition|null $definition optional explicit definition to use when creating the instance
+     * @return mixed                            the instance
+     */
     public function entity(string $class, array $key, array $data = null, TableDefinition $definition = null)
     {
         $class = $this->getClass($class);
@@ -203,7 +260,13 @@ class Manager
         return $this->entities[$definition->getName()][json_encode($pk)] = $instance;
     }
 
-    public function save($entity)
+    /**
+     * Persist an instance to DB
+     * @method save
+     * @param  mixed $entity the instance object
+     * @return array         the instance's primary key
+     */
+    public function save($entity) : array
     {
         $class = get_class($entity);
         $class = $this->getClass($class);
@@ -313,7 +376,13 @@ class Manager
         }
         return $new;
     }
-    public function delete($entity)
+    /**
+     * Remove an instance from DB
+     * @method delete
+     * @param  mixed $entity the instance to remove
+     * @return int           the deleted rows count
+     */
+    public function delete($entity) : int
     {
         $class = get_class($entity);
         $class = $this->getClass($class);

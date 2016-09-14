@@ -1,6 +1,9 @@
 <?php
 namespace vakata\orm;
 
+/**
+ * A dummy class used when hitting tables with no defined classes
+ */
 class Row
 {
     protected $data = [];

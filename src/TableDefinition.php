@@ -3,6 +3,9 @@ namespace vakata\orm;
 
 use vakata\database\DatabaseInterface;
 
+/**
+ * A table definition
+ */
 class TableDefinition
 {
     protected static $definitions = [];
@@ -10,6 +13,14 @@ class TableDefinition
     protected $data = [];
     protected $relations = [];
 
+    /**
+     * Create an instance from a table name
+     * @method fromDatabase
+     * @param  DatabaseInterface $db              the database instance
+     * @param  string            $table           the table to parse
+     * @param  bool|boolean      $detectRelations should relations be extracted - defaults to `true`
+     * @return TableDefinition                    the table definition
+     */
     public static function fromDatabase(DatabaseInterface $db, string $table, bool $detectRelations = true)
     {
         if (isset(static::$definitions[$db->name() . '.' . $table])) {
@@ -155,6 +166,11 @@ class TableDefinition
         return $definition;
     }
 
+    /**
+     * Create a new instance
+     * @method __construct
+     * @param  string      $name the table name
+     */
     public function __construct(string $name)
     {
         $this->data = [
@@ -164,11 +180,24 @@ class TableDefinition
         ];
         $this->relations = [];
     }
+    /**
+     * Add a column to the definition
+     * @method addColumn
+     * @param  string    $column     the column name
+     * @param  array     $definition optional array of data associated with the column
+     * @return  self
+     */
     public function addColumn(string $column, array $definition = []) : TableDefinition
     {
         $this->data['columns'][$column] = $definition;
         return $this;
     }
+    /**
+     * Add columns to the definition
+     * @method addColumns
+     * @param  array      $columns key - value pairs, where each key is a column name and each value - array of info
+     * @return  self
+     */
     public function addColumns(array $columns) : TableDefinition
     {
         foreach ($columns as $column => $definition) {
@@ -180,6 +209,12 @@ class TableDefinition
         }
         return $this;
     }
+    /**
+     * Set the primary key
+     * @method setPrimaryKey
+     * @param  array|string        $column either a single column name or an array of column names
+     * @return  self
+     */
     public function setPrimaryKey($column) : TableDefinition
     {
         if (!is_array($column)) {
@@ -188,26 +223,62 @@ class TableDefinition
         $this->data['primary'] = $column;
         return $this;
     }
+    /**
+     * Get the table name
+     * @method getName
+     * @return string  the table name
+     */
     public function getName()
     {
         return $this->data['name'];
     }
+    /**
+     * Get a column definition
+     * @method getColumn
+     * @param  string    $column the column name to search for
+     * @return array|null the column details or `null` if the column does not exist
+     */
     public function getColumn($column)
     {
         return $this->data['columns'][$column] ?? null;
     }
+    /**
+     * Get all column names
+     * @method getColumns
+     * @return array     array of strings, where each element is a column name
+     */
     public function getColumns()
     {
         return array_keys($this->data['columns']);
     }
+    /**
+     * Get all column definitions
+     * @method getFullColumns
+     * @return array         key - value pairs, where each key is a column name and each value - the column data
+     */
     public function getFullColumns()
     {
         return $this->data['columns'];
     }
+    /**
+     * Get the primary key columns
+     * @method getPrimaryKey
+     * @return array        array of column names
+     */
     public function getPrimaryKey()
     {
         return $this->data['primary'];
     }
+    /**
+     * Create a relation where each record has zero or one related rows in another table
+     * @method hasOne
+     * @param  TableDefinition   $toTable       the related table definition
+     * @param  string|null       $name          the name of the relation (defaults to the related table name)
+     * @param  string|array|null $toTableColumn the remote columns pointing to the PK in the current table
+     * @param  string|null       $sql           additional where clauses to use, default to null
+     * @param  array             $par           parameters for the above statement, defaults to an empty array
+     * @return self
+     */
     public function hasOne(
         TableDefinition $toTable,
         string $name = null,
@@ -254,6 +325,16 @@ class TableDefinition
         ];
         return $this;
     }
+    /**
+     * Create a relation where each record has zero, one or more related rows in another table
+     * @method hasMany
+     * @param  TableDefinition   $toTable       the related table definition
+     * @param  string|null       $name          the name of the relation (defaults to the related table name)
+     * @param  string|array|null $toTableColumn the remote columns pointing to the PK in the current table
+     * @param  string|null       $sql           additional where clauses to use, default to null
+     * @param  array             $par           parameters for the above statement, defaults to an empty array
+     * @return self
+     */
     public function hasMany(
         TableDefinition $toTable,
         string $name = null,
@@ -300,6 +381,16 @@ class TableDefinition
         ];
         return $this;
     }
+    /**
+     * Create a relation where each record belongs to another row in another table
+     * @method belongsTo
+     * @param  TableDefinition   $toTable       the related table definition
+     * @param  string|null       $name          the name of the relation (defaults to the related table name)
+     * @param  string|array|null $localColumn   the local columns pointing to the PK of the related table
+     * @param  string|null       $sql           additional where clauses to use, default to null
+     * @param  array             $par           parameters for the above statement, defaults to an empty array
+     * @return self
+     */
     public function belongsTo(
         TableDefinition $toTable,
         string $name = null,
@@ -346,6 +437,16 @@ class TableDefinition
         ];
         return $this;
     }
+    /**
+     * Create a relation where each record has many linked records in another table but using a liking table
+     * @method belongsTo
+     * @param  TableDefinition   $toTable       the related table definition
+     * @param  TableDefinition   $pivot         the pivot table definition
+     * @param  string|null       $name          the name of the relation (defaults to the related table name)
+     * @param  string|array|null $toTableColumn the local columns pointing to the pivot table
+     * @param  string|array|null $localColumn   the pivot columns pointing to the related table PK
+     * @return self
+     */
     public function manyToMany(
         TableDefinition $toTable,
         TableDefinition $pivot,
@@ -414,18 +515,40 @@ class TableDefinition
         ];
         return $this;
     }
+    /**
+     * Does the definition have related tables
+     * @method hasRelations
+     * @return boolean
+     */
     public function hasRelations() : bool
     {
         return count($this->relations) > 0;
     }
+    /**
+     * Get all relation definitions
+     * @method getRelations
+     * @return array       the relation definitions
+     */
     public function getRelations() : array
     {
         return $this->relations;
     }
+    /**
+     * Check if a named relation exists
+     * @method hasRelation
+     * @param  string      $name the name to search for
+     * @return boolean           does the relation exist
+     */
     public function hasRelation(string $name) : bool
     {
         return isset($this->relations[$name]);
     }
+    /**
+     * Get a relation by name
+     * @method getRelation
+     * @param  string      $name the name to search for
+     * @return array             the relation definition
+     */
     public function getRelation(string $name) : array
     {
         return $this->relations[$name] ?? null;

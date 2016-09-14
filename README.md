@@ -6,7 +6,7 @@
 [![Code Climate][ico-cc]][link-cc]
 [![Tests Coverage][ico-cc-coverage]][link-cc]
 
-A orm abstraction with support for various drivers (mySQL, postgre, oracle, msSQL, sphinx, and even PDO).
+A orm abstraction with support for various drivers.
 
 ## Install
 
@@ -22,48 +22,60 @@ $ composer require vakata/orm
 // first you need a database instance
 $db = new \vakata\database\DB('mysqli://root@127.0.0.1/test');
 
-// then you can create the table object
-$books = new \vakata\orm\Table($db, 'books'); // assuming there is a books table
-foreach ($books as $v) {
-    // iterate over the books
+// then you can create the manager object
+$manager = new \vakata\orm\Manager($db);
+
+// assuming there is a book table with a name column
+foreach ($manager->book() as $book) {
+    echo $book->name . "\n";
 }
-$books[0]; // get the first book
+// you could of course filter and order
+foreach ($manager->book()->filter('year', 2016)->sort('name') as $book) {
+    // iterate over the books from 2016
+}
 
-// you can also filter and order
-$books->filter('pages', 10)->order('name DESC');
-foreach ($books) { }
+// if using mySQL foreign keys are automatically detected
+// for example if there is an author table and the book table references it
+foreach ($manager->book() as $book) {
+    echo $book->author->get()->name . "\n";
+}
 
-// do not forget to reset if you want to change filters
-$books->reset(); // clears filters and ordering
+// you can solve the n+1 queries problem like this
+foreach ($manager->book()->with('author') as $book) {
+    echo $book->author->get()->name . "\n";
+}
 
-// the power comes from relations
-$authors = new \vakata\orm\Table($db, 'authors');
-// create a 1-to-1 relation by specifying a table object, relation name and column name (on the books table)
-$book->belongsTo($authors, 'author', 'author_id');
-// now you can access the relation by its name
-$books[0]->author->name;
-// you can also filter by it
-$books->filter('author.name', 'Terry Pratchett');
-// or order
-$books->order('author.name');
+// provided there is a linking table book_tag and a tag table and each book has many tags you can do this
+foreach ($manager->book()->with('author') as $book) {
+    echo $book->tag[0]->name . "\n"; // the name of the first tag which the current book has
+}
 
-// there is also are hasOne / hasMany / manyToMany relations
-$authors->hasMany($books, 'books', 'author_id');
-// now you can use
-$author[0]->books[1]->name;
+// which means you can do something like this
+echo $manager->book()[0]->author->get()->book[0]->tag[0]->book[0]->author->get()->name;
 
-// manyToMany relations require a pivot table
-$tags = new \vakata\orm\Table($db, 'tags');
-// create using: table instance, pivot table name, relation name, own id, foreign id
-$books->manyToMany($tags, 'book_tag', 'tags', 'book_id', 'tag_id');
+// filtering and ordering works on relations too
+$manager->book()->filter('author.name', 'A. Name');
 
-// you can also create, edit or delete relations
-$books[0]->tags[] = $tags->create(['name' => 'Testing']);
-$books->save();
-$books[0]->tags[0]->name = 'New name';
-$books->save();
-unset($books[0]->tags[0]);
-$books->save();
+// as for changing objects
+$author = $manager->author()[0];
+$author->name = 'New name';
+$manager->save($author);
+
+// you can also create new objects
+$book = $manager->create('book');
+$book->name = 'Test';
+$manager->save($book);
+
+// you can also use your own classes
+// just make sure you provide getters and setters for all table columns and relations
+class Author
+{
+    protected $data = [];
+    public function __get($key) { return $this->data[$key] ?? null; }
+    public function __set($key, $value) { $this->data[$key] = $value; }
+}
+$manager->addClassByTableName(Author::CLASS, 'author');
+$author = $manager->author()[0]; // this is an Author instance
 ```
 
 Read more in the [API docs](docs/README.md)

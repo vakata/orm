@@ -3,6 +3,9 @@ namespace vakata\orm;
 
 use vakata\database\DatabaseInterface;
 
+/**
+ * A database query class
+ */
 class Query
 {
     protected $db;
@@ -14,11 +17,23 @@ class Query
 
     protected $withr = [];
 
+    /**
+     * Create a query by table name
+     * @method fromDatabase
+     * @param  DatabaseInterface $db    the database instance
+     * @param  string            $table the table name to query
+     * @return Query                    the query object
+     */
     public static function fromDatabase(DatabaseInterface $db, string $table)
     {
         return new static($db, TableDefinition::fromDatabase($db, $table));
     }
-
+    /**
+     * Create an instance
+     * @method __construct
+     * @param  DatabaseInterface $db         the database instance
+     * @param  TableDefinition   $definition the table definition of the table to query
+     */
     public function __construct(DatabaseInterface $db, TableDefinition $definition)
     {
         $this->db = $db;
@@ -28,6 +43,11 @@ class Query
     {
         $this->reset();
     }
+    /**
+     * Get the table definition of the queried table
+     * @method getDefinition
+     * @return TableDefinition        the definition
+     */
     public function getDefinition() : TableDefinition
     {
         return $this->definition;
@@ -53,7 +73,13 @@ class Query
         }
         return implode('.', $column);
     }
-
+    /**
+     * Filter the results by a column and a value
+     * @method filter
+     * @param  string $column the column name to filter by (related columns can be used - for example: author.name)
+     * @param  mixed  $value  a required value, array of values or range of values (range example: ['beg'=>1,'end'=>3])
+     * @return self
+     */
     public function filter(string $column, $value) : Query
     {
         $column = $this->normalizeColumn($column);
@@ -68,11 +94,25 @@ class Query
         }
         return $this->where($column . ' IN (??)', [ $value ]);
     }
+    /**
+     * Sort by a column
+     * @method sort
+     * @param  string       $column the column name to sort by (related columns can be used - for example: author.name)
+     * @param  bool|boolean $desc   should the sorting be in descending order, defaults to `false`
+     * @return self
+     */
     public function sort(string $column, bool $desc = false) : Query
     {
         $column = $this->normalizeColumn($column);
         return $this->order('ORDER BY ' . $column . ' ' . ($desc ? 'DESC' : 'ASC'));
     }
+    /**
+     * Get a part of the data
+     * @method paginate
+     * @param  int|integer $page    the page number to get (1-based), defaults to 1
+     * @param  int|integer $perPage the number of records per page - defaults to 25
+     * @return self
+     */
     public function paginate(int $page = 1, int $perPage = 25) : Query
     {
         return $this->limit($perPage, ($page - 1) * $perPage);
@@ -86,6 +126,11 @@ class Query
             return $this->filter(strtolower(substr($name, 6)), $data[0]);
         }
     }
+    /**
+     * Remove all filters, sorting, etc
+     * @method reset
+     * @return self
+     */
     public function reset() : Query
     {
         $this->where = [];
@@ -93,23 +138,47 @@ class Query
         $this->limit = '';
         return $this;
     }
-
+    /**
+     * Apply an advanced filter (can be called multiple times)
+     * @method where
+     * @param  string $sql    SQL statement to be used in the where clause
+     * @param  array  $params parameters for the SQL statement (defaults to an empty array)
+     * @return self
+     */
     public function where(string $sql, array $params = []) : Query
     {
         $this->where[] = [ $sql, $params ];
         return $this;
     }
+    /**
+     * Apply advanced sorting
+     * @method order
+     * @param  string $sql    SQL statement to use in the ORDER clause
+     * @param  array  $params optional params for the statement (defaults to an empty array)
+     * @return self
+     */
     public function order(string $sql, array $params = []) : Query
     {
         $this->order = [ $sql, $params ];
         return $this;
     }
+    /**
+     * Apply an advanced limit
+     * @method limit
+     * @param  int         $limit  number of rows to return
+     * @param  int|integer $offset number of rows to skip from the beginning
+     * @return self
+     */
     public function limit(int $limit, int $offset = 0) : Query
     {
         $this->limit = 'LIMIT ' . $limit . ' OFFSET ' . $offset;
         return $this;
     }
-
+    /**
+     * Get the number of records
+     * @method count
+     * @return [type] [description]
+     */
     public function count() : int
     {
         $table = $this->definition->getName();
@@ -154,6 +223,12 @@ class Query
         }
         return $this->db->one($sql, $par);
     }
+    /**
+     * Perform the actual fetch
+     * @method select
+     * @param  array|null $fields optional array of columns to select (related columns can be used too)
+     * @return array              the query result as an array
+     */
     public function select(array $fields = null) : array
     {
         $table = $this->definition->getName();
@@ -292,6 +367,13 @@ class Query
         }
         return $result;
     }
+    /**
+     * Insert a new row in the table
+     * @method insert
+     * @param  array   $data   key value pairs, where each key is the column name and the value is the value to insert
+     * @param  boolean $update if the PK exists should the row be updated with the new data, defaults to `false`
+     * @return mixed           the last insert ID from the database
+     */
     public function insert(array $data, $update = false)
     {
         $table = $this->definition->getName();
@@ -314,6 +396,12 @@ class Query
         }
         return $this->db->query($sql, $par)->insertId();
     }
+    /**
+     * Update the filtered rows with new data
+     * @method update
+     * @param  array  $data key value pairs, where each key is the column name and the value is the value to insert
+     * @return int          the number of affected rows
+     */
     public function update(array $data) : int
     {
         $table = $this->definition->getName();
@@ -349,6 +437,11 @@ class Query
         }
         return $this->db->query($sql, $par)->affected();
     }
+    /**
+     * Delete the filtered rows from the DB
+     * @method delete
+     * @return int the number of deleted rows
+     */
     public function delete() : int
     {
         $table = $this->definition->getName();
@@ -372,7 +465,12 @@ class Query
         }
         return $this->db->query($sql, $par)->affected();
     }
-
+    /**
+     * Solve the n+1 queries problem by prefetching a relation by name
+     * @method with
+     * @param  string $relation the relation name to fetch along with the data
+     * @return self
+     */
     public function with(string $relation) : Query
     {
         if (!$this->definition->hasRelation($relation)) {

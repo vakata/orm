@@ -4,9 +4,11 @@ return (object)[
     'destDirectory' => 'docs',
     'format' => 'github',
     'classes' => [
-        '\\vakata\\orm\\Table',
-        '\\vakata\\orm\\TableRow',
+        '\\vakata\\orm\\Manager',
+        '\\vakata\\orm\\Collection',
+        '\\vakata\\orm\\Row',
+        '\\vakata\\orm\\Query',
         '\\vakata\\orm\\TableDefinition',
-        '\\vakata\\orm\\TableDefinitionArray'
+        '\\vakata\\orm\\ORMException'
     ],
 ];
