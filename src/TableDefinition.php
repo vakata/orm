@@ -23,8 +23,8 @@ class TableDefinition
      */
     public static function fromDatabase(DatabaseInterface $db, string $table, bool $detectRelations = true)
     {
-        if (isset(static::$definitions[$db->name() . '.' . $table])) {
-            return static::$definitions[$db->name() . '.' . $table];
+        if (isset(static::$definitions[(string)$db->name() . '.' . $table])) {
+            return static::$definitions[(string)$db->name() . '.' . $table];
         }
 
         $definition = new TableDefinition($table);
@@ -41,7 +41,6 @@ class TableDefinition
                 }
                 break;
             case 'postgre':
-            case 'oracle':
                 $columns = $db->all(
                     "SELECT * FROM information_schema.columns WHERE table_name = ?",
                     [ $table ],
@@ -60,10 +59,29 @@ class TableDefinition
                     );
                 }
                 break;
+            case 'oracle':
+                $columns = $db->all(
+                    "SELECT * FROM all_tab_cols WHERE table_name = ?",
+                    [ strtoupper($table) ],
+                    'COLUMN_NAME'
+                );
+                $tmp = $db->one(
+                    "SELECT constraint_name FROM all_constraints
+                     WHERE table_name = ? AND constraint_type = ?",
+                    [ strtoupper($table), 'P' ]
+                );
+                if ($tmp) {
+                    $primary = $db->all(
+                        "SELECT column_name FROM all_cons_columns
+                         WHERE table_name = ? AND constraint_name = ?",
+                        [ $table, $tmp ]
+                    );
+                }
+                break;
             default:
                 throw new ORMException('Driver is not supported: '.$database->driver(), 500);
         }
-        static::$definitions[$db->name() . '.' . $table] = $definition->addColumns($columns)->setPrimaryKey($primary);
+        static::$definitions[(string)$db->name() . '.' . $table] = $definition->addColumns($columns)->setPrimaryKey($primary);
 
         if ($detectRelations) {
             switch ($db->driver()) {

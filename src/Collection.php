@@ -2,7 +2,7 @@
 namespace vakata\orm;
 
 /**
- * A collection class - created automatically by the manager.
+ * A collection class - created automatically by the manager. It is traversable and countable.
  */
 class Collection implements \Iterator, \ArrayAccess, \Countable
 {
@@ -57,7 +57,7 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     /**
      * Make sure the collection will also contain some related data without requiring a new query
      * @method with
-     * @param  string $relation [description]
+     * @param  string $relation the relation name
      * @return self
      */
     public function with(string $relation) : Collection

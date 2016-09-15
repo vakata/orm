@@ -177,7 +177,7 @@ class Query
     /**
      * Get the number of records
      * @method count
-     * @return [type] [description]
+     * @return int the total number of records (does not respect pagination)
      */
     public function count() : int
     {
@@ -216,7 +216,7 @@ class Query
             $sql .= 'WHERE ';
             $tmp = [];
             foreach ($this->where as $v) {
-                $tmp[] = $v[0];
+                $tmp[] = '(' . $v[0] . ')';
                 $par = array_merge($par, $v[1]);
             }
             $sql .= implode(' AND ', $tmp).' ';
@@ -304,7 +304,7 @@ class Query
             $sql .= 'WHERE ';
             $tmp = [];
             foreach ($this->where as $v) {
-                $tmp[] = $v[0];
+                $tmp[] = '(' . $v[0] . ')';
                 $par = array_merge($par, $v[1]);
             }
             $sql .= implode(' AND ', $tmp).' ';
