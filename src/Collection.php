@@ -161,6 +161,23 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
         }
         return $temp;
     }
+    /**
+     * Find an instance within the collection using the instance's primary key
+     * @method find
+     * @param  mixed  $key the instance's primary key
+     * @return mixed  the entity or `null` if not found in collection
+     */
+    public function find($key)
+    {
+        if (!is_array($key)) {
+            $key = [ $key ];
+        }
+        $pk = [];
+        foreach ($definition->getPrimaryKey() as $field) {
+            $this->filter($field, $key[$field] ?? array_shift($key) ?? null);
+        }
+        return $this->offsetGet(0);
+    }
 
     // array stuff - collection handling
     public function offsetGet($offset)
