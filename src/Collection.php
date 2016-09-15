@@ -172,7 +172,6 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
         if (!is_array($key)) {
             $key = [ $key ];
         }
-        $pk = [];
         foreach ($this->query->getDefinition()->getPrimaryKey() as $field) {
             $this->filter($field, $key[$field] ?? array_shift($key) ?? null);
         }
