@@ -173,7 +173,7 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
             $key = [ $key ];
         }
         $pk = [];
-        foreach ($definition->getPrimaryKey() as $field) {
+        foreach ($this->query->getDefinition()->getPrimaryKey() as $field) {
             $this->filter($field, $key[$field] ?? array_shift($key) ?? null);
         }
         return $this->offsetGet(0);
