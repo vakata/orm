@@ -104,7 +104,7 @@ class Query
     public function sort(string $column, bool $desc = false) : Query
     {
         $column = $this->normalizeColumn($column);
-        return $this->order('ORDER BY ' . $column . ' ' . ($desc ? 'DESC' : 'ASC'));
+        return $this->order($column . ' ' . ($desc ? 'DESC' : 'ASC'));
     }
     /**
      * Get a part of the data
@@ -225,11 +225,11 @@ class Query
     }
     /**
      * Perform the actual fetch
-     * @method select
+     * @method iterator
      * @param  array|null $fields optional array of columns to select (related columns can be used too)
-     * @return array              the query result as an array
+     * @return QueryIterator               the query result as an iterator
      */
-    public function select(array $fields = null) : array
+    public function iterator(array $fields = null) : QueryIterator
     {
         $table = $this->definition->getName();
         $primary = $this->definition->getPrimaryKey();
@@ -313,59 +313,29 @@ class Query
         //    $sql .= 'GROUP BY '.$table.'.'.implode(', '.$table.'.', $primary).' ';
         //}
         if (count($this->order)) {
-            $sql .= $this->order[0];
+            $sql .= 'ORDER BY ' . $this->order[0];
             $par = array_merge($par, $this->order[1]);
         }
+        $porder = [];
+        foreach ($primary as $field) {
+            $porder[] = $this->normalizeColumn($field);
+        }
+        $sql .= (count($this->order) ? ', ' : 'ORDER BY ') . implode(', ', $porder);
+
         if ($this->limit) {
             $sql .= $this->limit;
         }
-        $result = [];
-        foreach ($this->db->get($sql, $par) as $row) {
-            $pk = [];
-            foreach ($primary as $field) {
-                $pk[$field] = $row[$field];
-            }
-            $pk = json_encode($pk);
-            if (!isset($result[$pk])) {
-                $result[$pk] = $row;
-            }
-            foreach ($this->withr as $relation) {
-                $temp = $this->definition->getRelation($relation);
-                if (!isset($result[$pk][$relation])) {
-                    $result[$pk][$relation] = $temp['many'] ? [] : null;
-                }
-                $fields = [];
-                $exists = false;
-                foreach ($temp['table']->getColumns() as $column) {
-                    $fields[$column] = $row[$relation . '___' . $column];
-                    if (!$exists && $row[$relation . '___' . $column] !== null) {
-                        $exists = true;
-                    }
-                    unset($result[$pk][$relation . '___' . $column]);
-                }
-                if ($exists) {
-                    if ($temp['many']) {
-                        $rpk = [];
-                        foreach ($temp['table']->getPrimaryKey() as $field) {
-                            $rpk[$field] = $fields[$field];
-                        }
-                        $result[$pk][$relation][json_encode($rpk)] = $fields;
-                    } else {
-                        $result[$pk][$relation] = $fields;
-                    }
-                }
-            }
-        }
-        $result = array_values($result);
-        foreach ($result as $k => $row) {
-            foreach ($this->withr as $relation) {
-                $temp = $this->definition->getRelation($relation);
-                if ($temp['many']) {
-                    $result[$k][$relation] = array_values($result[$k][$relation]);
-                }
-            }
-        }
-        return $result;
+        return new QueryIterator($this, $this->db->get($sql, $par), $this->withr);
+    }
+    /**
+     * Perform the actual fetch
+     * @method select
+     * @param  array|null $fields optional array of columns to select (related columns can be used too)
+     * @return array               the query result as an array
+     */
+    public function select(array $fields = null) : array
+    {
+        return iterator_to_array($this->iterator($fields));
     }
     /**
      * Insert a new row in the table

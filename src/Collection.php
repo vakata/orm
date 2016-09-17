@@ -11,6 +11,7 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     protected $single;
     protected $manager;
     protected $current;
+    protected $entities;
 
     /**
      * Create a collection instance
@@ -32,7 +33,7 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
         $this->query = $query;
         $this->single = $single;
         $this->manager = $manager;
-        $this->current = $current;
+        $this->current = $current !== null ? (new \ArrayObject($current))->getIterator() : null;
     }
     /**
      * Get the count of items in the collection
@@ -48,7 +49,7 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
      * @method reset
      * @return self
      */
-    public function reset() : TableInterface
+    public function reset() : Collection
     {
         $this->query->reset();
         $this->current = null;
@@ -155,11 +156,7 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
         if ($this->single) {
             return $this->offsetGet(0);
         }
-        $temp = [];
-        foreach ($this as $v) {
-            $temp[] = $v;
-        }
-        return $temp;
+        return iterator_to_array($this->current);
     }
     /**
      * Find an instance within the collection using the instance's primary key
@@ -182,21 +179,21 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     public function offsetGet($offset)
     {
         if ($this->current === null) {
-            $this->current = $this->query->select();
+            $this->current = $this->query->iterator();
         }
-        if (!isset($this->current[$offset])) {
-            return null;
+        if (isset($this->entities[$offset])) {
+            return $this->entities[$offset];
         }
-        $item = $this->current[$offset];
-        if (is_array($item)) {
-            return $this->current[$offset] = $this->manager->entity(
-                $this->class,
-                $item,
-                $item,
-                $this->query->getDefinition()
-            );
+        $item = $this->current->offsetGet($offset);
+        if ($item === null) {
+            return $this->entities[$offset] = null;
         }
-        return $this->current[$offset];
+        return $this->entities[$offset] = $this->manager->entity(
+            $this->class,
+            $item,
+            $item,
+            $this->query->getDefinition()
+        );
     }
     public function offsetSet($offset, $value)
     {
@@ -205,9 +202,9 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     public function offsetExists($offset)
     {
         if ($this->current === null) {
-            $this->current = $this->query->select();
+            $this->current = $this->query->iterator();
         }
-        return isset($this->current[$offset]);
+        return $this->current->offsetExists($offset);
     }
     public function offsetUnset($offset)
     {
@@ -216,45 +213,49 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     public function current()
     {
         if ($this->current === null) {
-            $this->current = $this->query->select();
+            $this->current = $this->query->iterator();
         }
-        $item = current($this->current);
-        if (is_array($item)) {
-            return $this->current[$this->key()] = $this->manager->entity(
-                $this->class,
-                $item,
-                $item,
-                $this->query->getDefinition()
-            );
+        $offset = $this->key();
+        if (isset($this->entities[$offset])) {
+            return $this->entities[$offset];
         }
-        return $item;
+        $item = $this->current->current();
+        if ($item === null || $item === false) {
+            return $this->entities[$offset] = $item;
+        }
+        return $this->entities[$offset] = $this->manager->entity(
+            $this->class,
+            $item,
+            $item,
+            $this->query->getDefinition()
+        );
     }
     public function key()
     {
         if ($this->current === null) {
-            $this->current = $this->query->select();
+            $this->current = $this->query->iterator();
         }
-        return key($this->current);
+        return $this->current->key();
     }
     public function next()
     {
         if ($this->current === null) {
-            $this->current = $this->query->select();
+            $this->current = $this->query->iterator();
         }
-        return next($this->current);
+        return $this->current->next();
     }
     public function rewind()
     {
         if ($this->current === null) {
-            $this->current = $this->query->select();
+            $this->current = $this->query->iterator();
         }
-        reset($this->current);
+        $this->current->next();
     }
     public function valid()
     {
         if ($this->current === null) {
-            $this->current = $this->query->select();
+            $this->current = $this->query->iterator();
         }
-        return current($this->current) !== false;
+        return $this->current->valid();
     }
 }
