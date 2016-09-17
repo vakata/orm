@@ -4,6 +4,8 @@ namespace vakata\orm;
 use vakata\database\DatabaseInterface;
 
 // TODO: relation to the same table using differnt keymaps - in TableDefinition
+// TODO: use db::get(), not db::all()
+// TODO: Oracle all uppercase? - fix at least in row?
 
 /**
  * Manager ORM class

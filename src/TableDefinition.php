@@ -46,16 +46,16 @@ class TableDefinition
                     [ $table ],
                     'column_name'
                 );
-                $tmp = $db->one(
+                $pkname = $db->one(
                     "SELECT constraint_name FROM information_schema.table_constraints
                      WHERE table_name = ? AND constraint_type = ?",
                     [ $table, 'PRIMARY KEY' ]
                 );
-                if ($tmp) {
+                if ($pkname) {
                     $primary = $db->all(
                         "SELECT column_name FROM information_schema.key_column_usage
                          WHERE table_name = ? AND constraint_name = ?",
-                        [ $table, $tmp ]
+                        [ $table, $pkname ]
                     );
                 }
                 break;
@@ -65,16 +65,17 @@ class TableDefinition
                     [ strtoupper($table) ],
                     'COLUMN_NAME'
                 );
-                $tmp = $db->one(
+                $owner = current($columns)['OWNER'];
+                $pkname = $db->one(
                     "SELECT constraint_name FROM all_constraints
-                     WHERE table_name = ? AND constraint_type = ?",
-                    [ strtoupper($table), 'P' ]
+                     WHERE table_name = ? AND constraint_type = ? AND owner = ?",
+                    [ strtoupper($table), 'P', $owner ]
                 );
-                if ($tmp) {
+                if ($pkname) {
                     $primary = $db->all(
                         "SELECT column_name FROM all_cons_columns
-                         WHERE table_name = ? AND constraint_name = ?",
-                        [ $table, $tmp ]
+                         WHERE table_name = ? AND constraint_name = ? AND owner = ?",
+                        [ strtoupper($table), $pkname, $owner ]
                     );
                 }
                 break;
@@ -165,6 +166,118 @@ class TableDefinition
                         $relations[$relation['CONSTRAINT_NAME']]['keymap'][$relation['COLUMN_NAME']] = $relation['REFERENCED_COLUMN_NAME'];
                     }
                     foreach ($relations as $name => $data) {
+                        $definition->relations[$data['table']] = [
+                            'name' => $data['table'],
+                            'table' => static::fromDatabase($db, $data['table'], true),
+                            'keymap' => $data['keymap'],
+                            'many' => false,
+                            'pivot' => null,
+                            'pivot_keymap' => [],
+                            'sql' => null,
+                            'par' => []
+                        ];
+                    }
+                    break;
+                case 'oracle':
+                    // relations where the current table is referenced
+                    // assuming current table is on the "one" end having "many" records in the referencing table
+                    // resulting in a "hasMany" or "manyToMany" relationship (if a pivot table is detected)
+                    $relations = [];
+                    foreach ($db->all(
+                        "SELECT ac.TABLE_NAME, ac.CONSTRAINT_NAME, cc.COLUMN_NAME
+                         FROM all_constraints ac
+                         LEFT JOIN all_cons_columns cc ON cc.OWNER = ac.OWNER AND cc.CONSTRAINT_NAME = ac.CONSTRAINT_NAME
+                         WHERE ac.OWNER = ? AND ac.R_OWNER = ? AND ac.R_CONSTRAINT_NAME = ? AND ac.CONSTRAINT_TYPE = ?
+                         ORDER BY cc.POSITION",
+                        [ $owner, $owner, $pkname, 'R' ]
+                    ) as $k => $relation) {
+                        $relations[$relation['CONSTRAINT_NAME']]['table'] = $relation['TABLE_NAME'];
+                        $relations[$relation['CONSTRAINT_NAME']]['keymap'][$primary[$k]] = $relation['COLUMN_NAME'];
+                    }
+                    foreach ($relations as $data) {
+                        $rtable = static::fromDatabase($db, $data['table'], false);
+                        $columns = [];
+                        foreach ($rtable->getColumns() as $column) {
+                            if (!in_array($column, $data['keymap'])) {
+                                $columns[] = $column;
+                            }
+                        }
+                        $foreign = [];
+                        $usedcol = [];
+                        if (count($columns)) {
+                            foreach ($db->all(
+                                "SELECT
+                                    cc.COLUMN_NAME, ac.CONSTRAINT_NAME, rc.TABLE_NAME AS REFERENCED_TABLE_NAME, ac.R_CONSTRAINT_NAME
+                                 FROM all_constraints ac
+                                 JOIN all_constraints rc ON rc.CONSTRAINT_NAME = ac.R_CONSTRAINT_NAME AND rc.OWNER = ac.OWNER
+                                 LEFT JOIN all_cons_columns cc ON cc.OWNER = ac.OWNER AND cc.CONSTRAINT_NAME = ac.CONSTRAINT_NAME
+                                 WHERE
+                                    ac.OWNER = ? AND ac.R_OWNER = ? AND ac.TABLE_NAME = ? AND ac.CONSTRAINT_TYPE = ? AND 
+                                    cc.COLUMN_NAME IN (??)
+                                 ORDER BY POSITION",
+                                [ $owner, $owner, $data['table'], 'R', $columns ]
+                            ) as $k => $relation) {
+                                $foreign[$relation['CONSTRAINT_NAME']]['table'] = $relation['REFERENCED_TABLE_NAME'];
+                                $foreign[$relation['CONSTRAINT_NAME']]['keymap'][$relation['COLUMN_NAME']] = $relation['R_CONSTRAINT_NAME'];
+                                $usedcol[] = $relation['COLUMN_NAME'];
+                            }
+                        }
+                        if (count($foreign) === 1 && !count(array_diff($columns, $usedcol))) {
+                            $foreign = current($foreign);
+                            $rcolumns = $db->all(
+                                "SELECT COLUMN_NAME FROM all_cons_columns WHERE OWNER = ? AND CONSTRAINT_NAME = ? ORDER BY POSITION",
+                                [ $owner, current($foreign['keymap']) ]
+                            );
+                            foreach ($foreign['keymap'] as $column => $related) {
+                                $foreign['keymap'][$column] = array_shift($rcolumns);
+                            }
+                            $definition->relations[$foreign['table']] = [
+                                'name' => $foreign['table'],
+                                'table' => static::fromDatabase($db, $foreign['table'], true),
+                                'keymap' => $data['keymap'],
+                                'many' => true,
+                                'pivot' => $rtable,
+                                'pivot_keymap' => $foreign['keymap'],
+                                'sql' => null,
+                                'par' => []
+                            ];
+                        } else {
+                            $definition->relations[$data['table']] = [
+                                'name' => $data['table'],
+                                'table' => static::fromDatabase($db, $data['table'], true),
+                                'keymap' => $data['keymap'],
+                                'many' => true,
+                                'pivot' => null,
+                                'pivot_keymap' => [],
+                                'sql' => null,
+                                'par' => []
+                            ];
+                        }
+                    }
+                    // relations where the current table references another table
+                    // assuming current table is linked to "one" record in the referenced table
+                    // resulting in a "belongsTo" relationship
+                    $relations = [];
+                    foreach ($db->all(
+                        "SELECT ac.CONSTRAINT_NAME, cc.COLUMN_NAME, rc.TABLE_NAME AS REFERENCED_TABLE_NAME, ac.R_CONSTRAINT_NAME
+                         FROM all_constraints ac
+                         JOIN all_constraints rc ON rc.CONSTRAINT_NAME = ac.R_CONSTRAINT_NAME AND rc.OWNER = ac.OWNER
+                         LEFT JOIN all_cons_columns cc ON cc.OWNER = ac.OWNER AND cc.CONSTRAINT_NAME = ac.CONSTRAINT_NAME
+                         WHERE ac.OWNER = ? AND ac.R_OWNER = ? AND ac.TABLE_NAME = ? AND ac.CONSTRAINT_TYPE = ?
+                         ORDER BY cc.POSITION",
+                        [ $owner, $owner, strtoupper($table), 'R' ]
+                    ) as $relation) {
+                        $relations[$relation['CONSTRAINT_NAME']]['table'] = $relation['REFERENCED_TABLE_NAME'];
+                        $relations[$relation['CONSTRAINT_NAME']]['keymap'][$relation['COLUMN_NAME']] = $relation['R_CONSTRAINT_NAME'];
+                    }
+                    foreach ($relations as $name => $data) {
+                        $rcolumns = $db->all(
+                            "SELECT COLUMN_NAME FROM all_cons_columns WHERE OWNER = ? AND CONSTRAINT_NAME = ? ORDER BY POSITION",
+                            [ $owner, current($data['keymap']) ]
+                        );
+                        foreach ($data['keymap'] as $column => $related) {
+                            $data['keymap'][$column] = array_shift($rcolumns);
+                        }
                         $definition->relations[$data['table']] = [
                             'name' => $data['table'],
                             'table' => static::fromDatabase($db, $data['table'], true),

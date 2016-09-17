@@ -187,20 +187,20 @@ class Query
         $par = [];
         foreach ($this->definition->getRelations() as $k => $v) {
             if ($v['pivot']) {
-                $sql .= 'LEFT JOIN '.$v['pivot']->getName().' AS '.$k.'_pivot ON ';
+                $sql .= 'LEFT JOIN '.$v['pivot']->getName().' '.$k.'_pivot ON ';
                 $tmp = [];
                 foreach ($v['keymap'] as $kk => $vv) {
                     $tmp[] = $table.'.'.$kk.' = '.$k.'_pivot.'.$vv.' ';
                 }
                 $sql .= implode(' AND ', $tmp);
-                $sql .= 'LEFT JOIN '.$v['table']->getName().' AS '.$k.' ON ';
+                $sql .= 'LEFT JOIN '.$v['table']->getName().' '.$k.' ON ';
                 $tmp = [];
                 foreach ($v['pivot_keymap'] as $kk => $vv) {
                     $tmp[] = $k.'.'.$vv.' = '.$k.'_pivot.'.$kk.' ';
                 }
                 $sql .= implode(' AND ', $tmp);
             } else {
-                $sql .= 'LEFT JOIN '.$v['table']->getName().' AS '.$k.' ON ';
+                $sql .= 'LEFT JOIN '.$v['table']->getName().' '.$k.' ON ';
                 $tmp = [];
                 foreach ($v['keymap'] as $kk => $vv) {
                     $tmp[] = $table.'.'.$kk.' = '.$k.'.'.$vv.' ';
@@ -263,11 +263,11 @@ class Query
         }
         $select = [];
         foreach ($fields as $k => $field) {
-            $select[] = $field . (!is_numeric($k) ? ' AS ' . $k : '');
+            $select[] = $field . (!is_numeric($k) ? ' ' . $k : '');
         }
         foreach ($this->withr as $relation) {
             foreach ($this->definition->getRelation($relation)['table']->getColumns() as $column) {
-                $select[] = $relation . '.' . $column . ' AS ' . $relation . '___' . $column;
+                $select[] = $relation . '.' . $column . ' ' . $relation . '___' . $column;
             }
         }
         $sql = 'SELECT '.implode(', ', $select).' FROM '.$table.' ';
@@ -275,20 +275,20 @@ class Query
         foreach (array_unique($relations) as $relation) {
             $v = $this->definition->getRelation($relation);
             if ($v['pivot']) {
-                $sql .= 'LEFT JOIN '.$v['pivot']->getName().' AS '.$relation.'_pivot ON ';
+                $sql .= 'LEFT JOIN '.$v['pivot']->getName().' '.$relation.'_pivot ON ';
                 $tmp = [];
                 foreach ($v['keymap'] as $kk => $vv) {
                     $tmp[] = $table.'.'.$kk.' = '.$relation.'_pivot.'.$vv.' ';
                 }
                 $sql .= implode(' AND ', $tmp);
-                $sql .= 'LEFT JOIN '.$v['table']->getName().' AS '.$relation.' ON ';
+                $sql .= 'LEFT JOIN '.$v['table']->getName().' '.$relation.' ON ';
                 $tmp = [];
                 foreach ($v['pivot_keymap'] as $kk => $vv) {
                     $tmp[] = $relation.'.'.$vv.' = '.$relation.'_pivot.'.$kk.' ';
                 }
                 $sql .= implode(' AND ', $tmp);
             } else {
-                $sql .= 'LEFT JOIN '.$v['table']->getName().' AS '.$relation.' ON ';
+                $sql .= 'LEFT JOIN '.$v['table']->getName().' '.$relation.' ON ';
                 $tmp = [];
                 foreach ($v['keymap'] as $kk => $vv) {
                     $tmp[] = $table.'.'.$kk.' = '.$relation.'.'.$vv.' ';
