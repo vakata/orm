@@ -320,7 +320,7 @@ class Query
         foreach ($primary as $field) {
             $porder[] = $this->normalizeColumn($field);
         }
-        $sql .= (count($this->order) ? ', ' : 'ORDER BY ') . implode(', ', $porder);
+        $sql .= (count($this->order) ? ', ' : 'ORDER BY ') . implode(', ', $porder) . ' ';
 
         if ($this->limit) {
             $sql .= $this->limit;
