@@ -149,7 +149,7 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     /**
      * Get the whole object either as an array (if `single` is `false`) or the single resulting object
      * @method get
-     * @return mixed 
+     * @return mixed
      */
     public function get()
     {
@@ -216,10 +216,10 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
             $this->current = $this->query->iterator();
         }
         $offset = $this->key();
+        $item = $this->current->current();
         if (isset($this->entities[$offset])) {
             return $this->entities[$offset];
         }
-        $item = $this->current->current();
         if ($item === null || $item === false) {
             return $this->entities[$offset] = $item;
         }
@@ -249,7 +249,7 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
         if ($this->current === null) {
             $this->current = $this->query->iterator();
         }
-        $this->current->next();
+        $this->current->rewind();
     }
     public function valid()
     {
