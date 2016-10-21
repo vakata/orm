@@ -26,15 +26,15 @@ class Query
      */
     public static function fromDatabase(DatabaseInterface $db, string $table)
     {
-        return new static($db, TableDefinition::fromDatabase($db, $table));
+        return new static($db, Table::fromDatabase($db, $table));
     }
     /**
      * Create an instance
      * @method __construct
      * @param  DatabaseInterface $db         the database instance
-     * @param  TableDefinition   $definition the table definition of the table to query
+     * @param  Table   $definition the table definition of the table to query
      */
-    public function __construct(DatabaseInterface $db, TableDefinition $definition)
+    public function __construct(DatabaseInterface $db, Table $definition)
     {
         $this->db = $db;
         $this->definition = $definition;
@@ -46,9 +46,9 @@ class Query
     /**
      * Get the table definition of the queried table
      * @method getDefinition
-     * @return TableDefinition        the definition
+     * @return Table        the definition
      */
-    public function getDefinition() : TableDefinition
+    public function getDefinition() : Table
     {
         return $this->definition;
     }

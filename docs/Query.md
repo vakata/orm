@@ -16,6 +16,7 @@ A database query class
 |[order](#vakata\orm\queryorder)|Apply advanced sorting|
 |[limit](#vakata\orm\querylimit)|Apply an advanced limit|
 |[count](#vakata\orm\querycount)|Get the number of records|
+|[iterator](#vakata\orm\queryiterator)|Perform the actual fetch|
 |[select](#vakata\orm\queryselect)|Perform the actual fetch|
 |[insert](#vakata\orm\queryinsert)|Insert a new row in the table|
 |[update](#vakata\orm\queryupdate)|Update the filtered rows with new data|
@@ -54,14 +55,14 @@ Create an instance
 ```php
 public function __construct (  
     \DatabaseInterface $db,  
-    \TableDefinition $definition  
+    \Table $definition  
 )   
 ```
 
 |  | Type | Description |
 |-----|-----|-----|
 | `$db` | `\DatabaseInterface` | the database instance |
-| `$definition` | `\TableDefinition` | the table definition of the table to query |
+| `$definition` | `\Table` | the table definition of the table to query |
 
 ---
 
@@ -71,13 +72,13 @@ Get the table definition of the queried table
 
 
 ```php
-public function getDefinition () : \TableDefinition    
+public function getDefinition () : \Table    
 ```
 
 |  | Type | Description |
 |-----|-----|-----|
 |  |  |  |
-| `return` | `\TableDefinition` | the definition |
+| `return` | `\Table` | the definition |
 
 ---
 
@@ -229,13 +230,32 @@ Get the number of records
 
 
 ```php
-public function count () : \[type]    
+public function count () : int    
 ```
 
 |  | Type | Description |
 |-----|-----|-----|
 |  |  |  |
-| `return` | `\[type]` | [description] |
+| `return` | `int` | the total number of records (does not respect pagination) |
+
+---
+
+
+### vakata\orm\Query::iterator
+Perform the actual fetch  
+
+
+```php
+public function iterator (  
+    array|null $fields  
+) : \QueryIterator    
+```
+
+|  | Type | Description |
+|-----|-----|-----|
+| `$fields` | `array`, `null` | optional array of columns to select (related columns can be used too) |
+|  |  |  |
+| `return` | `\QueryIterator` | the query result as an iterator |
 
 ---
 

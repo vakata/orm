@@ -8,6 +8,7 @@ class Author extends \vakata\orm\Row
 class OrmTest extends \PHPUnit_Framework_TestCase
 {
     protected static $db       = null;
+    protected static $schema   = null;
     protected static $manager  = null;
 
     public static function setUpBeforeClass() {
@@ -24,6 +25,7 @@ class OrmTest extends \PHPUnit_Framework_TestCase
                 self::$db->query($query);
             }
         }
+        self::$schema = new \vakata\orm\Schema(self::$db);
     }
     public static function tearDownAfterClass() {
         self::$db->query("SET FOREIGN_KEY_CHECKS = 0");
@@ -40,14 +42,14 @@ class OrmTest extends \PHPUnit_Framework_TestCase
     }
 
     public function testCollection() {
-        $manager = new \vakata\orm\Manager(self::$db);
+        $manager = new \vakata\orm\Manager(self::$schema);
 
         $books = $manager->book();
         $this->assertEquals(count($books), 1);
         $this->assertEquals($books[0]->name, 'Equal rites');
     }
     public function testRelations() {
-        $manager = new \vakata\orm\Manager(self::$db);
+        $manager = new \vakata\orm\Manager(self::$schema);
 
         $books = $manager->book();
         $this->assertEquals($books[0]->author[0]->name, 'Terry Pratchett');
@@ -56,14 +58,14 @@ class OrmTest extends \PHPUnit_Framework_TestCase
     }
 
     public function testRelationsWith() {
-        $manager = new \vakata\orm\Manager(self::$db);
+        $manager = new \vakata\orm\Manager(self::$schema);
 
         $books = $manager->book()->with('author');
         $this->assertEquals($books[0]->author[0]->name, 'Terry Pratchett');
     }
 
     public function testFilter() {
-        $manager = new \vakata\orm\Manager(self::$db);
+        $manager = new \vakata\orm\Manager(self::$schema);
 
         $this->assertEquals(count($manager->book()->filter('name', 'Equal rites')), 1);
         $this->assertEquals(count($manager->book()->filter('name', 'Not found')), 0);
@@ -75,7 +77,7 @@ class OrmTest extends \PHPUnit_Framework_TestCase
     }
 
     public function testReadLoop() {
-        $manager = new \vakata\orm\Manager(self::$db);
+        $manager = new \vakata\orm\Manager(self::$schema);
         $author = $manager->author();
         foreach($author as $k => $a) {
             $this->assertEquals($k + 1, $a->id);
@@ -85,27 +87,27 @@ class OrmTest extends \PHPUnit_Framework_TestCase
         }
     }
     public function testReadIndex() {
-        $manager = new \vakata\orm\Manager(self::$db);
+        $manager = new \vakata\orm\Manager(self::$schema);
         $author = $manager->author();
         $this->assertEquals($author[0]->name, 'Terry Pratchett');
         $this->assertEquals($author[2]->name, 'Douglas Adams');
     }
     public function testReadRelations() {
-        $manager = new \vakata\orm\Manager(self::$db);
+        $manager = new \vakata\orm\Manager(self::$schema);
         $author = $manager->author();
         $this->assertEquals($author[0]->book[0]->name, 'Equal rites');
         $this->assertEquals($author[0]->book[0]->tag[1]->name, 'Escarina');
     }
     public function testReadChanges() {
         self::$db->query('INSERT INTO author VALUES(NULL, ?)', ['Stephen King']);
-        $manager = new \vakata\orm\Manager(self::$db);
+        $manager = new \vakata\orm\Manager(self::$schema);
         $author = $manager->author();
         $this->assertEquals($author[3]->name, 'Stephen King');
     }
 
     public function testCreate() {
-        $manager = new \vakata\orm\Manager(self::$db);
-        $manager->addClassByTableName(Author::CLASS, 'author');
+        $manager = new \vakata\orm\Manager(self::$schema);
+        $manager->addClass(Author::CLASS, 'author');
 
         $author = $manager->author();
 
@@ -119,13 +121,13 @@ class OrmTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($author[0]->book[0]->tag[1]->name, 'Escarina');
     }
     public function testManagerCreate() {
-        $manager = new \vakata\orm\Manager(self::$db);
+        $manager = new \vakata\orm\Manager(self::$schema);
         $tag = $manager->create('tag', [ 'name' => 'TEST' ]);
         $manager->save($tag);
         $this->assertEquals($manager->tag()[3]->name, 'TEST');
     }
     public function testUpdate() {
-        $manager = new \vakata\orm\Manager(self::$db);
+        $manager = new \vakata\orm\Manager(self::$schema);
         $author = $manager->author();
         $author[0]->name = 'Terry Pratchett, Sir';
         $manager->save($author[0]);
@@ -133,7 +135,7 @@ class OrmTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(self::$db->one('SELECT name FROM author WHERE id = 1'), 'Terry Pratchett, Sir');
     }
     public function testDelete() {
-        $manager = new \vakata\orm\Manager(self::$db);
+        $manager = new \vakata\orm\Manager(self::$schema);
         $author = $manager->author();
         $manager->delete($author[4]);
         $this->assertEquals(count($manager->author()), 4);
@@ -145,7 +147,7 @@ class OrmTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(self::$db->one('SELECT COUNT(*) FROM book_tag'), 0);
     }
     public function testChangePK() {
-        $manager = new \vakata\orm\Manager(self::$db);
+        $manager = new \vakata\orm\Manager(self::$schema);
         $author = $manager->author();
         $this->assertEquals($author[2]->name, 'Douglas Adams');
         $this->assertEquals($author[2]->id, 3);
@@ -155,7 +157,7 @@ class OrmTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(42, $manager->author()[3]->id);
     }
     public function testCreateRelationFromDB() {
-        $manager = new \vakata\orm\Manager(self::$db);
+        $manager = new \vakata\orm\Manager(self::$schema);
         $author = $manager->author();
         self::$db->query('INSERT INTO book VALUES(NULL, ?, ?)', ['The Hitchhiker\'s Guide to the Galaxy', 42]);
         $this->assertEquals('The Hitchhiker\'s Guide to the Galaxy', $author[3]->book[0]->name);

@@ -21,9 +21,11 @@ $ composer require vakata/orm
 ``` php
 // first you need a database instance
 $db = new \vakata\database\DB('mysqli://root@127.0.0.1/test');
+// then a schema
+$schema = new \vakata\database\Schema($db);
 
 // then you can create the manager object
-$manager = new \vakata\orm\Manager($db);
+$manager = new \vakata\orm\Manager($schema);
 
 // assuming there is a book table with a name column
 foreach ($manager->book() as $book) {
@@ -74,7 +76,7 @@ class Author
     public function __get($key) { return $this->data[$key] ?? null; }
     public function __set($key, $value) { $this->data[$key] = $value; }
 }
-$manager->addClassByTableName(Author::CLASS, 'author');
+$manager->addClass(Author::CLASS, 'author');
 $author = $manager->author()[0]; // this is an Author instance
 ```
 

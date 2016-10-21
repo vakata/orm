@@ -8,7 +8,9 @@ return (object)[
         '\\vakata\\orm\\Collection',
         '\\vakata\\orm\\Row',
         '\\vakata\\orm\\Query',
-        '\\vakata\\orm\\TableDefinition',
+        '\\vakata\\orm\\Table',
+        '\\vakata\\orm\\Column',
+        '\\vakata\\orm\\Schema',
         '\\vakata\\orm\\ORMException'
     ],
 ];

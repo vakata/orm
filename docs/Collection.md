@@ -1,5 +1,5 @@
 # vakata\orm\Collection
-A collection class - created automatically by the manager.
+A collection class - created automatically by the manager. It is traversable and countable.
 
 ## Methods
 
@@ -16,6 +16,7 @@ A collection class - created automatically by the manager.
 |[order](#vakata\orm\collectionorder)|Apply advanced sorting to the collection|
 |[limit](#vakata\orm\collectionlimit)|Apply an advanced limit|
 |[get](#vakata\orm\collectionget)|Get the whole object either as an array (if `single` is `false`) or the single resulting object|
+|[find](#vakata\orm\collectionfind)|Find an instance within the collection using the instance's primary key|
 
 ---
 
@@ -90,7 +91,7 @@ public function with (
 
 |  | Type | Description |
 |-----|-----|-----|
-| `$relation` | `string` | [description] |
+| `$relation` | `string` | the relation name |
 |  |  |  |
 | `return` | `self` |  |
 
@@ -235,6 +236,25 @@ public function get () : mixed
 |-----|-----|-----|
 |  |  |  |
 | `return` | `mixed` |  |
+
+---
+
+
+### vakata\orm\Collection::find
+Find an instance within the collection using the instance's primary key  
+
+
+```php
+public function find (  
+    mixed $key  
+) : mixed    
+```
+
+|  | Type | Description |
+|-----|-----|-----|
+| `$key` | `mixed` | the instance's primary key |
+|  |  |  |
+| `return` | `mixed` | the entity or `null` if not found in collection |
 
 ---
 

@@ -1,9 +1,6 @@
 <?php
 namespace vakata\orm;
 
-use vakata\database\DatabaseInterface;
-
-// TODO: relation to the same table using differnt keymaps - in TableDefinition
 // TODO: use db::get(), not db::all()
 // TODO: Oracle all uppercase? - fix at least in row?
 
@@ -12,21 +9,20 @@ use vakata\database\DatabaseInterface;
  */
 class Manager
 {
-    protected $db;
+    protected $schema;
     protected $creator;
     protected $classes = [];
     protected $entities = [];
-    protected $definitions = [];
 
     /**
      * Create an instance
      * @method __construct
-     * @param  DatabaseInterface $db      the database connection
+     * @param  Schema            $schema  the database schema
      * @param  callable|null     $creator optional function used to create all necessary classes
      */
-    public function __construct(DatabaseInterface $db, callable $creator = null)
+    public function __construct(Schema $schema, callable $creator = null)
     {
-        $this->db = $db;
+        $this->schema = $schema;
         $this->creator = $creator !== null ?
             $creator :
             function ($class) {
@@ -34,131 +30,60 @@ class Manager
             };
     }
     /**
-     * Add a table definition to the manager (most of the time you can rely on the autodetected definitions)
-     * @method addDefinition
-     * @param  TableDefinition $definition the definition
-     * @return  self
-     */
-    public function addDefinition(TableDefinition $definition)
-    {
-        if (!isset($this->definitions[$definition->getName()])) {
-            $this->definitions[$definition->getName()] = $definition;
-        }
-        return $this;
-    }
-    /**
-     * Autodetect a definition by table name and add it to the manager.
-     * @method addDefinitionByTableName
-     * @param  string                   $table the table to analyze
-     * @return  self
-     */
-    public function addDefinitionByTableName(string $table)
-    {
-        if (!isset($this->definitions[$table])) {
-            $this->addDefinition(TableDefinition::fromDatabase($this->db, $table));
-        }
-        return $this;
-    }
-    /**
-     * Get an existing definition.
-     * @method getDefinition
-     * @param  string        $search the table name
-     * @return TableDefinition|null                the definition of null if not found
-     */
-    public function getDefinition(string $search)
-    {
-        return $this->definitions[$search] ?? null;
-    }
-    /**
-     * Add a class by name and link it to a definition
+     * Add a class by name and link it to a table
      * @method addClass
-     * @param  string          $class      the class to create when reading from the table
-     * @param  TableDefinition $definition the table definition associated with the class
-     * @return  self
-     */
-    public function addClass(string $class, TableDefinition $definition)
-    {
-        if (!isset($this->definitions[$table->getName()])) {
-            $this->addDefinition($definition);
-        }
-        $this->classes[$class] = $this->definitions[$definition->getName()];
-        return $this;
-    }
-    /**
-     * Add a class by name and link it to a table name
-     * @method addClassByTableName
      * @param  string          $class      the class to create when reading from the table
      * @param  string          $table      the table name associated with the class
      * @return  self
      */
-    public function addClassByTableName(string $class, string $table)
+    public function addClass(string $class, string $table)
     {
-        if (!isset($this->definitions[$table])) {
-            $this->addDefinitionByTableName($table);
-        }
-        $this->classes[$class] = $this->definitions[$table];
+        $this->classes[$class] = $table;
         return $this;
     }
-    protected function getClass(string $search)
+    protected function getClass(string $search, $default = null)
     {
-        foreach ($this->classes as $class => $definition) {
+        foreach ($this->classes as $class => $table) {
             if (strtolower($class) === strtolower($search)) {
                 return $class;
             }
         }
-        foreach ($this->classes as $class => $definition) {
-            if (strtolower($definition->getName()) === strtolower($search)) {
+        foreach ($this->classes as $class => $table) {
+            if (strtolower($table) === strtolower($search)) {
                 return $class;
             }
         }
-        foreach ($this->classes as $class => $definition) {
+        foreach ($this->classes as $class => $table) {
             if (strtolower(basename(str_replace('\\', '/', $class))) === strtolower($search)) {
                 return $class;
             }
         }
-        return null;
+        return $default;
     }
 
     public function __call(string $search, array $args)
     {
-        $class = $this->getClass($search);
-        if (!$class) {
-            $this->addDefinitionByTableName($search, true);
-            $class = Row::CLASS;
-            $definition = $this->definitions[$search];
-        } else {
-            $definition = $this->classes[$class];
-        }
-        if (!count($args)) {
-            return new Collection(new Query($this->db, $definition), $this, $class);
-        }
-        return $this->entity($class, $args, null, $definition);
+        $class = $this->getClass($search, Row::CLASS);
+        return !count($args) ?
+            new Collection($this->schema->query($this->classes[$class] ?? $search), $this, $class) :
+            $this->entity($class, $args, null, $this->schema->getTable($this->classes[$class] ?? $search));
     }
     /**
      * Create an instance
      * @method create
      * @param  string               $search     the type of instance to create (class name, table name, etc)
      * @param  array                $data       optional array of data to populate with (defaults to an empty array)
-     * @param  TableDefinition|null $definition optional explicit definition to use
+     * @param  Table|null $definition optional explicit definition to use
      * @return mixed                            the newly created instance
      */
-    public function create(string $search, array $data = [], TableDefinition $definition = null)
+    public function create(string $search, array $data = [], Table $definition = null)
     {
-        $class = $this->getClass($search);
-        if (!$class) {
-            $class = Row::CLASS;
-            if (!$definition) {
-                if (!isset($this->definitions[$search])) {
-                    $this->addDefinitionByTableName($search, true);
-                }
-                $definition = $this->definitions[$search];
-            }
+        $class = $this->getClass($search, Row::CLASS);
+        if (!$definition) {
+            $definition = $this->schema->getTable($this->classes[$class] ?? $search);
         }
         if (!$definition) {
-            if (!isset($this->classes[$class])) {
-                throw new ORMException('No definition');
-            }
-            $definition = $this->classes[$class];
+            throw new ORMException('No definition');
         }
         $instance = call_user_func($this->creator, $class);
         if ($class === Row::CLASS) {
@@ -181,20 +106,17 @@ class Manager
      * @param  string               $class      the class name
      * @param  array                $key        the ID of the entity
      * @param  array|null           $data       optional data to populate with, if missing it is gathered from DB
-     * @param  TableDefinition|null $definition optional explicit definition to use when creating the instance
+     * @param  Table|null $definition optional explicit definition to use when creating the instance
      * @return mixed                            the instance
      */
-    public function entity(string $class, array $key, array $data = null, TableDefinition $definition = null)
+    public function entity(string $class, array $key, array $data = null, Table $definition = null)
     {
-        $class = $this->getClass($class);
-        if (!$class) {
-            $class = Row::CLASS;
-        }
+        $class = $this->getClass($class, Row::CLASS);
         if (!$definition) {
             if (!isset($this->classes[$class])) {
                 throw new ORMException('No definition');
             }
-            $definition = $this->classes[$class];
+            $definition = $this->schema->getTable($this->classes[$class]);
         }
         if (!isset($this->entities[$definition->getName()])) {
             $this->entities[$definition->getName()] = [];
@@ -207,7 +129,7 @@ class Manager
             return $this->entities[$definition->getName()][json_encode($pk)];
         }
         if ($data === null) {
-            $table = new Query($this->db, $definition);
+            $table = $this->schema->query($definition);
             foreach ($pk as $field => $value) {
                 $table->filter($field, $value);
             }
@@ -225,7 +147,7 @@ class Manager
             $instance->{$column} = $data[$column] ?? null;
         }
         foreach ($definition->getRelations() as $name => $relation) {
-            $query = new Query($this->db, $relation['table']);
+            $query = $this->schema->query($relation['table']);
             if ($relation['sql']) {
                 $query->where($relation['sql'], $relation['par']);
             }
@@ -271,22 +193,11 @@ class Manager
     public function save($entity) : array
     {
         $class = get_class($entity);
-        $class = $this->getClass($class);
-        $definition = null;
-        if (!$class) {
-            $class = Row::CLASS;
-            if ($entity->__definition === null) {
-                throw new ORMException('No definition');
-            }
-            $definition = $this->definitions[$entity->__definition];
-        }
+        $class = $this->getClass($class, Row::CLASS);
+        $definition = $this->schema->getTable($this->classes[$class] ?? $entity->__definition);
         if (!$definition) {
-            if (!isset($this->classes[$class])) {
-                throw new ORMException('No definition');
-            }
-            $definition = $this->classes[$class];
+            throw new ORMException('No definition');
         }
-
         $data = [];
         foreach ($definition->getColumns() as $column) {
             $data[$column] = $entity->{$column} ?? null;
@@ -315,7 +226,7 @@ class Manager
             }
         }
         
-        $q = new Query($this->db, $definition);
+        $q = $this->schema->query($definition);
         if ($old === false) {
             $id = $q->insert($data);
             if ($id !== null && count($definition->getPrimaryKey()) === 1) {
@@ -347,7 +258,7 @@ class Manager
                             }
                         }
                         if ($old !== false) {
-                            $query = new Query($this->db, $relation['table']);
+                            $query = $this->schema->query($relation['table']);
                             $data = [];
                             foreach ($relation['keymap'] as $local => $remote) {
                                 $query->filter($remote, $old[$local]);
@@ -357,7 +268,7 @@ class Manager
                         }
                     }
                 } else {
-                    $query = new Query($this->db, $relation['pivot']);
+                    $query = $this->schema->query($relation['pivot']);
                     $data = [];
                     foreach ($relation['keymap'] as $local => $remote) {
                         $query->filter($remote, $new[$local]);
@@ -387,16 +298,10 @@ class Manager
     public function delete($entity) : int
     {
         $class = get_class($entity);
-        $class = $this->getClass($class);
-        if (!$class) {
-            $class = Row::CLASS;
-            $definition = $this->definitions[$entity->__definition];
-        }
+        $class = $this->getClass($class, Row::CLASS);
+        $definition = $this->schema->getTable($this->classes[$class] ?? $entity->__definition);
         if (!$definition) {
-            if (!isset($this->classes[$class])) {
-                throw new ORMException('No definition');
-            }
-            $definition = $this->classes[$class];
+            throw new ORMException('No definition');
         }
         
         // should there be a check if the entity exists in storage?
@@ -414,7 +319,7 @@ class Manager
             $pk[$field] = $entity->{$field};
         }
 
-        $q = new Query($this->db, $definition);
+        $q = $this->schema->query($definition);
         foreach ($pk as $field => $value) {
             $q->filter($field, $value);
         }
@@ -422,14 +327,14 @@ class Manager
         // delete relations (might not be necessary - FK may have already deleted those)
         foreach ($definition->getRelations() as $name => $relation) {
             if ($relation['pivot']) {
-                $query = new Query($this->db, $relation['pivot']);
+                $query = $this->schema->query($relation['pivot']);
                 foreach ($relation['keymap'] as $local => $remote) {
                     $query->filter($remote, $pk[$local]);
                 }
                 $query->delete();
             } else {
                 if (!count(array_diff(array_keys($relation['keymap']), array_keys($pk)))) {
-                    $query = new Query($this->db, $relation['table']);
+                    $query = $this->schema->query($relation['table']);
                     if ($relation['sql']) {
                         $query->where($relation['sql'], $relation['par']);
                     }
