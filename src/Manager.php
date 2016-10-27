@@ -16,7 +16,6 @@ class Manager
 
     /**
      * Create an instance
-     * @method __construct
      * @param  Schema            $schema  the database schema
      * @param  callable|null     $creator optional function used to create all necessary classes
      */
@@ -31,7 +30,6 @@ class Manager
     }
     /**
      * Add a class by name and link it to a table
-     * @method addClass
      * @param  string          $class      the class to create when reading from the table
      * @param  string          $table      the table name associated with the class
      * @return  self
@@ -70,7 +68,6 @@ class Manager
     }
     /**
      * Create an instance
-     * @method create
      * @param  string               $search     the type of instance to create (class name, table name, etc)
      * @param  array                $data       optional array of data to populate with (defaults to an empty array)
      * @param  Table|null $definition optional explicit definition to use
@@ -102,7 +99,6 @@ class Manager
     }
     /**
      * Create an entity
-     * @method entity
      * @param  string               $class      the class name
      * @param  array                $key        the ID of the entity
      * @param  array|null           $data       optional data to populate with, if missing it is gathered from DB
@@ -186,7 +182,6 @@ class Manager
 
     /**
      * Persist an instance to DB
-     * @method save
      * @param  mixed $entity the instance object
      * @return array         the instance's primary key
      */
@@ -291,7 +286,6 @@ class Manager
     }
     /**
      * Remove an instance from DB
-     * @method delete
      * @param  mixed $entity the instance to remove
      * @return int           the deleted rows count
      */

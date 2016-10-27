@@ -15,7 +15,6 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
 
     /**
      * Create a collection instance
-     * @method __construct
      * @param  Query        $query   a query to populate this collection with
      * @param  Manager      $manager the manager to which this collection belongs
      * @param  string       $class   the class name to use when creating items
@@ -37,7 +36,6 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     }
     /**
      * Get the count of items in the collection
-     * @method count
      * @return int the number of items in the collection
      */
     public function count() : int
@@ -46,7 +44,6 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     }
     /**
      * Reset the collection - useful to remove applied filters, orders, etc.
-     * @method reset
      * @return self
      */
     public function reset() : Collection
@@ -57,7 +54,6 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     }
     /**
      * Make sure the collection will also contain some related data without requiring a new query
-     * @method with
      * @param  string $relation the relation name
      * @return self
      */
@@ -69,7 +65,6 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     }
     /**
      * Filter a collection by a column and a value
-     * @method filter
      * @param  string $column the column to filter by
      * @param  mixed  $value  the required value of the column
      * @return self
@@ -82,7 +77,6 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     }
     /**
      * Sort by a column
-     * @method sort
      * @param  string       $column the column name to sort by
      * @param  bool|boolean $desc   should the sort be in descending order, defaults to `false`
      * @return self
@@ -95,7 +89,6 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     }
     /**
      * Get a part of the data
-     * @method paginate
      * @param  int|integer $page    the page number to get (1-based), defaults to 1
      * @param  int|integer $perPage the number of records per page - defaults to 25
      * @return self
@@ -108,7 +101,6 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     }
     /**
      * Apply an advanced filter on the collection (can be called multiple times)
-     * @method where
      * @param  string $sql    SQL statement to be used in the where clause
      * @param  array  $params parameters for the SQL statement (defaults to an empty array)
      * @return self
@@ -121,7 +113,6 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     }
     /**
      * Apply advanced sorting to the collection
-     * @method order
      * @param  string $sql    SQL statement to use in the ORDER clause
      * @param  array  $params optional params for the statement (defaults to an empty array)
      * @return self
@@ -134,7 +125,6 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     }
     /**
      * Apply an advanced limit
-     * @method limit
      * @param  int         $limit  number of rows to return
      * @param  int|integer $offset number of rows to skip from the beginning
      * @return self
@@ -148,7 +138,6 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
 
     /**
      * Get the whole object either as an array (if `single` is `false`) or the single resulting object
-     * @method get
      * @return mixed
      */
     public function get()
@@ -160,7 +149,6 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     }
     /**
      * Find an instance within the collection using the instance's primary key
-     * @method find
      * @param  mixed  $key the instance's primary key
      * @return mixed  the entity or `null` if not found in collection
      */

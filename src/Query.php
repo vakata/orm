@@ -19,7 +19,6 @@ class Query
 
     /**
      * Create a query by table name
-     * @method fromDatabase
      * @param  DatabaseInterface $db    the database instance
      * @param  string            $table the table name to query
      * @return Query                    the query object
@@ -30,7 +29,6 @@ class Query
     }
     /**
      * Create an instance
-     * @method __construct
      * @param  DatabaseInterface $db         the database instance
      * @param  Table   $definition the table definition of the table to query
      */
@@ -45,7 +43,6 @@ class Query
     }
     /**
      * Get the table definition of the queried table
-     * @method getDefinition
      * @return Table        the definition
      */
     public function getDefinition() : Table
@@ -75,7 +72,6 @@ class Query
     }
     /**
      * Filter the results by a column and a value
-     * @method filter
      * @param  string $column the column name to filter by (related columns can be used - for example: author.name)
      * @param  mixed  $value  a required value, array of values or range of values (range example: ['beg'=>1,'end'=>3])
      * @return self
@@ -96,7 +92,6 @@ class Query
     }
     /**
      * Sort by a column
-     * @method sort
      * @param  string       $column the column name to sort by (related columns can be used - for example: author.name)
      * @param  bool|boolean $desc   should the sorting be in descending order, defaults to `false`
      * @return self
@@ -108,7 +103,6 @@ class Query
     }
     /**
      * Get a part of the data
-     * @method paginate
      * @param  int|integer $page    the page number to get (1-based), defaults to 1
      * @param  int|integer $perPage the number of records per page - defaults to 25
      * @return self
@@ -128,7 +122,6 @@ class Query
     }
     /**
      * Remove all filters, sorting, etc
-     * @method reset
      * @return self
      */
     public function reset() : Query
@@ -140,7 +133,6 @@ class Query
     }
     /**
      * Apply an advanced filter (can be called multiple times)
-     * @method where
      * @param  string $sql    SQL statement to be used in the where clause
      * @param  array  $params parameters for the SQL statement (defaults to an empty array)
      * @return self
@@ -152,7 +144,6 @@ class Query
     }
     /**
      * Apply advanced sorting
-     * @method order
      * @param  string $sql    SQL statement to use in the ORDER clause
      * @param  array  $params optional params for the statement (defaults to an empty array)
      * @return self
@@ -164,7 +155,6 @@ class Query
     }
     /**
      * Apply an advanced limit
-     * @method limit
      * @param  int         $limit  number of rows to return
      * @param  int|integer $offset number of rows to skip from the beginning
      * @return self
@@ -176,7 +166,6 @@ class Query
     }
     /**
      * Get the number of records
-     * @method count
      * @return int the total number of records (does not respect pagination)
      */
     public function count() : int
@@ -225,7 +214,6 @@ class Query
     }
     /**
      * Perform the actual fetch
-     * @method iterator
      * @param  array|null $fields optional array of columns to select (related columns can be used too)
      * @return QueryIterator               the query result as an iterator
      */
@@ -329,7 +317,6 @@ class Query
     }
     /**
      * Perform the actual fetch
-     * @method select
      * @param  array|null $fields optional array of columns to select (related columns can be used too)
      * @return array               the query result as an array
      */
@@ -339,7 +326,6 @@ class Query
     }
     /**
      * Insert a new row in the table
-     * @method insert
      * @param  array   $data   key value pairs, where each key is the column name and the value is the value to insert
      * @param  boolean $update if the PK exists should the row be updated with the new data, defaults to `false`
      * @return mixed           the last insert ID from the database
@@ -368,7 +354,6 @@ class Query
     }
     /**
      * Update the filtered rows with new data
-     * @method update
      * @param  array  $data key value pairs, where each key is the column name and the value is the value to insert
      * @return int          the number of affected rows
      */
@@ -409,7 +394,6 @@ class Query
     }
     /**
      * Delete the filtered rows from the DB
-     * @method delete
      * @return int the number of deleted rows
      */
     public function delete() : int
@@ -437,7 +421,6 @@ class Query
     }
     /**
      * Solve the n+1 queries problem by prefetching a relation by name
-     * @method with
      * @param  string $relation the relation name to fetch along with the data
      * @return self
      */

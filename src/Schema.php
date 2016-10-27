@@ -10,7 +10,6 @@ class Schema implements \JsonSerializable
 
     /**
      * Create an instance
-     * @method __construct
      * @param  DatabaseInterface $this->db      the database connection
      * @param  callable|null     $creator optional function used to create all necessary classes
      */
@@ -22,7 +21,6 @@ class Schema implements \JsonSerializable
 
     /**
      * Add a table definition to the schema (most of the time you can rely on the autodetected definitions)
-     * @method addTable
      * @param  Table $definition the definition
      * @return  self
      */
@@ -35,7 +33,6 @@ class Schema implements \JsonSerializable
     }
     /**
      * Autodetect a definition by table name and add it to the schema.
-     * @method addTableByName
      * @param  string            $table the table to analyze
      * @param  bool|boolean      $detectRelations should relations be extracted - defaults to `true`
      * @return  the newly added definition
@@ -376,7 +373,6 @@ class Schema implements \JsonSerializable
     }
     /**
      * Does the schema have a given table.
-     * @method hasTable
      * @param  string        $search the table name
      * @return bool                does the schema contain this table
      */
@@ -386,7 +382,6 @@ class Schema implements \JsonSerializable
     }
     /**
      * Get an existing definition.
-     * @method getDefinition
      * @param  string        $search     the table name
      * @param  string        $autodetect load the definition from the database if not present - defaults to `true`
      * @return Table                     the table definition
@@ -401,7 +396,6 @@ class Schema implements \JsonSerializable
     }
     /**
      * Add all tables from database.
-     * @method addAllTables
      * @return self
      */
     public function addAllTables()
@@ -432,7 +426,6 @@ class Schema implements \JsonSerializable
     }
     /**
      * Get the full schema as an array that you can serialize and store
-     * @method toArray
      * @return array
      */
     public function toArray()
@@ -468,7 +461,6 @@ class Schema implements \JsonSerializable
     }
     /**
      * Load the schema data from a schema definition array (obtained from toArray)
-     * @method fromArray
      * @param  array        $data the schema definition
      * @return self
      */
@@ -496,7 +488,6 @@ class Schema implements \JsonSerializable
     }
     /**
      * Get a query object for a table
-     * @method query
      * @param  Table|string        $table the table definition or name
      * @return self
      */

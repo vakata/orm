@@ -13,7 +13,6 @@ class Table
 
     /**
      * Create a new instance
-     * @method __construct
      * @param  string      $name the table name
      */
     public function __construct(string $name)
@@ -28,7 +27,6 @@ class Table
     }
     /**
      * Get the table comment
-     * @method getComment
      * @return string  the table comment
      */
     public function getComment()
@@ -37,7 +35,6 @@ class Table
     }
     /**
      * Set the table comment
-     * @method setComment
      * @param  string    $comment     the table comment
      * @return self
      */
@@ -48,7 +45,6 @@ class Table
     }
     /**
      * Add a column to the definition
-     * @method addColumn
      * @param  string    $column     the column name
      * @param  array     $definition optional array of data associated with the column
      * @return  self
@@ -60,7 +56,6 @@ class Table
     }
     /**
      * Add columns to the definition
-     * @method addColumns
      * @param  array      $columns key - value pairs, where each key is a column name and each value - array of info
      * @return  self
      */
@@ -77,7 +72,6 @@ class Table
     }
     /**
      * Set the primary key
-     * @method setPrimaryKey
      * @param  array|string        $column either a single column name or an array of column names
      * @return  self
      */
@@ -91,7 +85,6 @@ class Table
     }
     /**
      * Get the table name
-     * @method getName
      * @return string  the table name
      */
     public function getName()
@@ -100,7 +93,6 @@ class Table
     }
     /**
      * Get a column definition
-     * @method getColumn
      * @param  string    $column the column name to search for
      * @return array|null the column details or `null` if the column does not exist
      */
@@ -110,7 +102,6 @@ class Table
     }
     /**
      * Get all column names
-     * @method getColumns
      * @return array     array of strings, where each element is a column name
      */
     public function getColumns()
@@ -119,7 +110,6 @@ class Table
     }
     /**
      * Get all column definitions
-     * @method getFullColumns
      * @return array         key - value pairs, where each key is a column name and each value - the column data
      */
     public function getFullColumns()
@@ -128,7 +118,6 @@ class Table
     }
     /**
      * Get the primary key columns
-     * @method getPrimaryKey
      * @return array        array of column names
      */
     public function getPrimaryKey()
@@ -137,7 +126,6 @@ class Table
     }
     /**
      * Create a relation where each record has zero or one related rows in another table
-     * @method hasOne
      * @param  Table   $toTable       the related table definition
      * @param  string|null       $name          the name of the relation (defaults to the related table name)
      * @param  string|array|null $toTableColumn the remote columns pointing to the PK in the current table
@@ -193,7 +181,6 @@ class Table
     }
     /**
      * Create a relation where each record has zero, one or more related rows in another table
-     * @method hasMany
      * @param  Table   $toTable       the related table definition
      * @param  string|null       $name          the name of the relation (defaults to the related table name)
      * @param  string|array|null $toTableColumn the remote columns pointing to the PK in the current table
@@ -249,7 +236,6 @@ class Table
     }
     /**
      * Create a relation where each record belongs to another row in another table
-     * @method belongsTo
      * @param  Table   $toTable       the related table definition
      * @param  string|null       $name          the name of the relation (defaults to the related table name)
      * @param  string|array|null $localColumn   the local columns pointing to the PK of the related table
@@ -305,7 +291,6 @@ class Table
     }
     /**
      * Create a relation where each record has many linked records in another table but using a liking table
-     * @method belongsTo
      * @param  Table   $toTable       the related table definition
      * @param  Table   $pivot         the pivot table definition
      * @param  string|null       $name          the name of the relation (defaults to the related table name)
@@ -383,7 +368,6 @@ class Table
     }
     /**
      * Create an advanced relation using the internal array format
-     * @method addRelation
      * @param  string            $name          the name of the relation (defaults to the related table name)
      * @param  array             $relation      the relation definition
      * @return self
@@ -396,7 +380,6 @@ class Table
     }
     /**
      * Does the definition have related tables
-     * @method hasRelations
      * @return boolean
      */
     public function hasRelations() : bool
@@ -405,7 +388,6 @@ class Table
     }
     /**
      * Get all relation definitions
-     * @method getRelations
      * @return array       the relation definitions
      */
     public function getRelations() : array
@@ -414,7 +396,6 @@ class Table
     }
     /**
      * Check if a named relation exists
-     * @method hasRelation
      * @param  string      $name the name to search for
      * @return boolean           does the relation exist
      */
@@ -424,7 +405,6 @@ class Table
     }
     /**
      * Get a relation by name
-     * @method getRelation
      * @param  string      $name the name to search for
      * @return array             the relation definition
      */
@@ -434,7 +414,6 @@ class Table
     }
     /**
      * Rename a relation
-     * @method renameRelation
      * @param  string      $name the name to search for
      * @param  string      $new  the new name for the relation
      * @return array             the relation definition
