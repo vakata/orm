@@ -100,7 +100,7 @@ class Schema implements \JsonSerializable
                 }
                 break;
             default:
-                throw new ORMException('Driver is not supported: '.$database->driver(), 500);
+                throw new ORMException('Driver is not supported: '.$this->db->driver(), 500);
         }
         if (!count($columns)) {
             throw new ORMException('Table not found by name');
@@ -366,7 +366,7 @@ class Schema implements \JsonSerializable
                     }
                     break;
                 default:
-                    throw new ORMException('Relations discovery is not supported: '.$database->driver(), 500);
+                    throw new ORMException('Relations discovery is not supported: '.$this->db->driver(), 500);
             }
         }
         return $definition;
@@ -489,7 +489,7 @@ class Schema implements \JsonSerializable
     /**
      * Get a query object for a table
      * @param  Table|string        $table the table definition or name
-     * @return self
+     * @return \vakata\orm\Query
      */
     public function query($table)
     {

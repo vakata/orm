@@ -18,16 +18,6 @@ class Query
     protected $withr = [];
 
     /**
-     * Create a query by table name
-     * @param  DatabaseInterface $db    the database instance
-     * @param  string            $table the table name to query
-     * @return Query                    the query object
-     */
-    public static function fromDatabase(DatabaseInterface $db, string $table)
-    {
-        return new static($db, Table::fromDatabase($db, $table));
-    }
-    /**
      * Create an instance
      * @param  DatabaseInterface $db         the database instance
      * @param  Table   $definition the table definition of the table to query

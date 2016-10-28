@@ -96,10 +96,11 @@ class QueryIterator implements \Iterator, \ArrayAccess, \Countable
             $this->result->next();
             if ($this->result->valid()) {
                 $row = $this->result->current();
+                $temp = [];
                 foreach ($this->definition->getPrimaryKey() as $field) {
-                    $this->primary[$field] = $row[$field];
+                    $temp[$field] = $row[$field];
                 }
-                $this->primary = json_encode($this->primary);
+                $this->primary = json_encode($temp);
                 return;
             }
         }

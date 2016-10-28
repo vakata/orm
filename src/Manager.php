@@ -61,7 +61,7 @@ class Manager
 
     public function __call(string $search, array $args)
     {
-        $class = $this->getClass($search, Row::CLASS);
+        $class = $this->getClass($search, Row::class);
         return !count($args) ?
             new Collection($this->schema->query($this->classes[$class] ?? $search), $this, $class) :
             $this->entity($class, $args, null, $this->schema->getTable($this->classes[$class] ?? $search));
@@ -75,7 +75,7 @@ class Manager
      */
     public function create(string $search, array $data = [], Table $definition = null)
     {
-        $class = $this->getClass($search, Row::CLASS);
+        $class = $this->getClass($search, Row::class);
         if (!$definition) {
             $definition = $this->schema->getTable($this->classes[$class] ?? $search);
         }
@@ -83,7 +83,7 @@ class Manager
             throw new ORMException('No definition');
         }
         $instance = call_user_func($this->creator, $class);
-        if ($class === Row::CLASS) {
+        if ($class === Row::class) {
             $instance->__definition = $definition->getName();
         }
         foreach ($definition->getColumns() as $column) {
@@ -107,7 +107,7 @@ class Manager
      */
     public function entity(string $class, array $key, array $data = null, Table $definition = null)
     {
-        $class = $this->getClass($class, Row::CLASS);
+        $class = $this->getClass($class, Row::class);
         if (!$definition) {
             if (!isset($this->classes[$class])) {
                 throw new ORMException('No definition');
@@ -136,7 +136,7 @@ class Manager
             $data = $data[0];
         }
         $instance = call_user_func($this->creator, $class);
-        if ($class === Row::CLASS) {
+        if ($class === Row::class) {
             $instance->__definition = $definition->getName();
         }
         foreach ($definition->getColumns() as $column) {
@@ -188,7 +188,7 @@ class Manager
     public function save($entity) : array
     {
         $class = get_class($entity);
-        $class = $this->getClass($class, Row::CLASS);
+        $class = $this->getClass($class, Row::class);
         $definition = $this->schema->getTable($this->classes[$class] ?? $entity->__definition);
         if (!$definition) {
             throw new ORMException('No definition');
@@ -292,7 +292,7 @@ class Manager
     public function delete($entity) : int
     {
         $class = get_class($entity);
-        $class = $this->getClass($class, Row::CLASS);
+        $class = $this->getClass($class, Row::class);
         $definition = $this->schema->getTable($this->classes[$class] ?? $entity->__definition);
         if (!$definition) {
             throw new ORMException('No definition');
