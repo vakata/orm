@@ -40,25 +40,66 @@ class Query
         return $this->definition;
     }
 
-    protected function normalizeColumn($column)
+    protected function getColumn($column)
     {
         $column = explode('.', $column, 2);
         if (count($column) === 1) {
             $column = [ $this->definition->getName(), $column[0] ];
         }
         if ($column[0] === $this->definition->getName()) {
-            if (!in_array($column[1], $this->definition->getColumns())) {
+            $col = $this->definition->getColumn($column[1]);
+            if (!$col) {
                 throw new ORMException('Invalid column name in own table');
             }
-            return implode('.', $column);
+        } else {
+            if (!$this->definition->hasRelation($column[0])) {
+                throw new ORMException('Invalid relation name');
+            }
+            $col = $this->definition->getRelation($column[0])['table']->getColumn($column[1]);
+            if (!$col) {
+                throw new ORMException('Invalid column name in related table');
+            }
         }
-        if (!$this->definition->hasRelation($column[0])) {
-            throw new ORMException('Invalid relation name');
+        return [ 'name' => implode('.', $column), 'data' => $col ];
+    }
+    protected function normalizeValue(Column $col, $value)
+    {
+        switch ($col->getBasicType()) {
+            case 'date':
+                if (is_string($value)) {
+                    return date('Y-m-d', strtotime($value));
+                }
+                if (is_int($value)) {
+                    return date('Y-m-d', $value);
+                }
+                if ($value instanceof \DateTime) {
+                    return $value->format('Y-m-d');
+                }
+                return $value;
+            case 'datetime':
+                if (is_string($value)) {
+                    return date('Y-m-d H:i:s', strtotime($value));
+                }
+                if (is_int($value)) {
+                    return date('Y-m-d H:i:s', $value);
+                }
+                if ($value instanceof \DateTime) {
+                    return $value->format('Y-m-d H:i:s');
+                }
+                return $value;
+            case 'enum':
+                if (is_int($value)) {
+                    return $value;
+                }
+                if (!in_array($value, $col->getValues())) {
+                    return 0;
+                }
+                return $value;
+            case 'int':
+                return (int)$value;
+            default:
+                return $value;
         }
-        if (!in_array($column[1], $this->definition->getRelation($column[0])['table']->getColumns())) {
-            throw new ORMException('Invalid column name in related table');
-        }
-        return implode('.', $column);
     }
     /**
      * Filter the results by a column and a value
@@ -68,17 +109,29 @@ class Query
      */
     public function filter(string $column, $value) : Query
     {
-        $column = $this->normalizeColumn($column);
+        list($name, $column) = array_values($this->getColumn($column));
         if (is_null($value)) {
-            return $this->where($column . ' IS NULL');
+            return $this->where($name . ' IS NULL');
         }
         if (!is_array($value)) {
-            return $this->where($column . ' = ?', [ $value ]);
+            return $this->where(
+                $name . ' = ?',
+                [ $this->normalizeValue($column, $value) ]
+            );
         }
         if (isset($value['beg']) && isset($value['end'])) {
-            return $this->where($column.' BETWEEN ? AND ?', [$value['beg'], $value['end']]);
+            return $this->where(
+                $name.' BETWEEN ? AND ?',
+                [
+                    $this->normalizeValue($column, $value['beg']),
+                    $this->normalizeValue($column, $value['end'])
+                ]
+            );
         }
-        return $this->where($column . ' IN (??)', [ $value ]);
+        return $this->where(
+            $name . ' IN (??)',
+            [ array_map(function ($v) use ($column) { return $this->normalizeValue($column, $v); }, $value) ]
+        );
     }
     /**
      * Sort by a column
@@ -88,8 +141,7 @@ class Query
      */
     public function sort(string $column, bool $desc = false) : Query
     {
-        $column = $this->normalizeColumn($column);
-        return $this->order($column . ' ' . ($desc ? 'DESC' : 'ASC'));
+        return $this->order($this->getColumn($column)['name'] . ' ' . ($desc ? 'DESC' : 'ASC'));
     }
     /**
      * Get a part of the data
@@ -215,10 +267,10 @@ class Query
             $fields = $this->definition->getColumns();
         }
         foreach ($fields as $k => $v) {
-            $fields[$k] = $this->normalizeColumn($v);
+            $fields[$k] = $this->getColumn($v)['name'];
         }
         foreach ($primary as $field) {
-            $field = $this->normalizeColumn($field);
+            $field = $this->getColumn($field)['name'];
             if (!in_array($field, $fields)) {
                 $fields[] = $field;
             }
@@ -296,7 +348,7 @@ class Query
         }
         $porder = [];
         foreach ($primary as $field) {
-            $porder[] = $this->normalizeColumn($field);
+            $porder[] = $this->getColumn($field)['name'];
         }
         $sql .= (count($this->order) ? ', ' : 'ORDER BY ') . implode(', ', $porder) . ' ';
 
@@ -323,11 +375,11 @@ class Query
     public function insert(array $data, $update = false)
     {
         $table = $this->definition->getName();
-        $columns = $this->definition->getColumns();
+        $columns = $this->definition->getFullColumns();
         $insert = [];
         foreach ($data as $column => $value) {
-            if (in_array($column, $columns)) {
-                $insert[$column] = $value;
+            if (isset($columns[$column])) {
+                $insert[$column] = $this->normalizeValue($columns[$column], $value);
             }
         }
         if (!count($insert)) {
@@ -350,11 +402,11 @@ class Query
     public function update(array $data) : int
     {
         $table = $this->definition->getName();
-        $columns = $this->definition->getColumns();
+        $columns = $this->definition->getFullColumns();
         $update = [];
         foreach ($data as $column => $value) {
-            if (in_array($column, $columns)) {
-                $update[$column] = $value;
+            if (isset($columns[$column])) {
+                $update[$column] = $this->normalizeValue($columns[$column], $value);
             }
         }
         if (!count($update)) {
