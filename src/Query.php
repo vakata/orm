@@ -6,10 +6,11 @@ use vakata\database\DatabaseInterface;
 /**
  * A database query class
  */
-class Query
+class Query implements \Iterator, \ArrayAccess, \Countable
 {
     protected $db;
     protected $definition;
+    protected $qiterator;
 
     protected $where = [];
     protected $order = [];
@@ -171,6 +172,7 @@ class Query
         $this->where = [];
         $this->order = [];
         $this->li_of = [0,0];
+        $this->qiterator = null;
         return $this;
     }
     /**
@@ -181,6 +183,7 @@ class Query
      */
     public function where(string $sql, array $params = []) : Query
     {
+        $this->qiterator = null;
         $this->where[] = [ $sql, $params ];
         return $this;
     }
@@ -192,6 +195,7 @@ class Query
      */
     public function order(string $sql, array $params = []) : Query
     {
+        $this->qiterator = null;
         $this->order = [ $sql, $params ];
         return $this;
     }
@@ -203,6 +207,7 @@ class Query
      */
     public function limit(int $limit, int $offset = 0) : Query
     {
+        $this->qiterator = null;
         $this->li_of = [ $limit, $offset ];
         return $this;
     }
@@ -501,7 +506,72 @@ class Query
         if (!$this->definition->hasRelation($relation)) {
             throw new ORMException('Invalid relation name');
         }
+        $this->qiterator = null;
         $this->withr[$relation] = $relation;
         return $this;
+    }
+
+    public function key()
+    {
+        if (!$this->qiterator) {
+            $this->qiterator = $this->iterator();
+        }
+        return $this->qiterator->key();
+    }
+    public function current()
+    {
+        if (!$this->qiterator) {
+            $this->qiterator = $this->iterator();
+        }
+        return $this->qiterator->current();
+    }
+    public function rewind()
+    {
+        if (!$this->qiterator) {
+            $this->qiterator = $this->iterator();
+        }
+        return $this->qiterator->rewind();
+    }
+    public function next()
+    {
+        if (!$this->qiterator) {
+            $this->qiterator = $this->iterator();
+        }
+        return $this->qiterator->next();
+    }
+    public function valid()
+    {
+        if (!$this->qiterator) {
+            $this->qiterator = $this->iterator();
+        }
+        return $this->qiterator->valid();
+    }
+    public function offsetGet($offset)
+    {
+        if (!$this->qiterator) {
+            $this->qiterator = $this->iterator();
+        }
+        return $this->qiterator->offsetGet($offset);
+    }
+    public function offsetExists($offset)
+    {
+        if (!$this->qiterator) {
+            $this->qiterator = $this->iterator();
+        }
+        return $this->qiterator->offsetExists($offset);
+    }
+    public function offsetUnset($offset)
+    {
+        if (!$this->qiterator) {
+            $this->qiterator = $this->iterator();
+        }
+        return $this->qiterator->offsetUnset($offset);
+    }
+    public function offsetSet($offset, $value)
+    {
+        if (!$this->qiterator) {
+            $this->qiterator = $this->iterator();
+        }
+        return $this->qiterator->offsetSet($offset, $value);
     }
 }

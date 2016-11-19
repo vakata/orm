@@ -135,6 +135,15 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
         $this->current = null;
         return $this;
     }
+    public function __call($name, $data)
+    {
+        if (strpos($name, 'filterBy') === 0) {
+            return $this->filter(strtolower(substr($name, 8)), $data[0]);
+        }
+        if (strpos($name, 'sortBy') === 0) {
+            return $this->filter(strtolower(substr($name, 6)), $data[0]);
+        }
+    }
 
     /**
      * Get the whole object either as an array (if `single` is `false`) or the single resulting object
