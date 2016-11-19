@@ -176,14 +176,14 @@ Get a query object for a table
 ```php
 public function query (  
     \Table|string $table  
-) : self    
+) : \vakata\orm\Query    
 ```
 
 |  | Type | Description |
 |-----|-----|-----|
 | `$table` | `\Table`, `string` | the table definition or name |
 |  |  |  |
-| `return` | `self` |  |
+| `return` | [`\vakata\orm\Query`](Query.md) |  |
 
 ---
 

@@ -13,7 +13,7 @@ class Query
 
     protected $where = [];
     protected $order = [];
-    protected $limit = '';
+    protected $li_of = [0,0];
 
     protected $withr = [];
 
@@ -170,7 +170,7 @@ class Query
     {
         $this->where = [];
         $this->order = [];
-        $this->limit = '';
+        $this->li_of = [0,0];
         return $this;
     }
     /**
@@ -198,12 +198,12 @@ class Query
     /**
      * Apply an advanced limit
      * @param  int         $limit  number of rows to return
-     * @param  int|integer $offset number of rows to skip from the beginning
+     * @param  int         $offset number of rows to skip from the beginning (defaults to 0)
      * @return self
      */
     public function limit(int $limit, int $offset = 0) : Query
     {
-        $this->limit = 'LIMIT ' . $limit . ' OFFSET ' . $offset;
+        $this->li_of = [ $limit, $offset ];
         return $this;
     }
     /**
@@ -352,8 +352,28 @@ class Query
         }
         $sql .= (count($this->order) ? ', ' : 'ORDER BY ') . implode(', ', $porder) . ' ';
 
-        if ($this->limit) {
-            $sql .= $this->limit;
+        if ($this->li_of[0]) {
+            if ($this->db->driver() === 'oracle') {
+                if ((int)($this->db->settings()->options['version'] ?? 0) >= 12) {
+                    $sql .= 'OFFSET ' . $this->li_of[1] . ' ROWS FETCH NEXT ' . $this->li_of[0] . ' ROWS ONLY';
+                } else {
+                    $fields = array_map(function ($v) {
+                        $v = explode(' ', trim($v), 2);
+                        if (count($v) === 2) { return $v[1]; }
+                        $v = explode('.', $v[0], 2);
+                        return count($v) === 2 ? $v[1] : $v[0];
+                    }, $select);
+                    $sql = "SELECT " . implode(', ', $fields) . " 
+                            FROM (
+                                SELECT tbl__.*, rownum rnum__ FROM (
+                                    " . $sql . "
+                                ) tbl__ 
+                                WHERE rownum <= " . ($this->li_of[0] + $this->li_of[1]) . "
+                            ) WHERE rnum__ > " . $this->li_of[1];
+                }
+            } else {
+                $sql .= 'LIMIT ' . $this->li_of[0] . ' OFFSET ' . $this->li_of[1];
+            }
         }
         return new QueryIterator($this, $this->db->get($sql, $par), $this->withr);
     }
@@ -369,10 +389,9 @@ class Query
     /**
      * Insert a new row in the table
      * @param  array   $data   key value pairs, where each key is the column name and the value is the value to insert
-     * @param  boolean $update if the PK exists should the row be updated with the new data, defaults to `false`
-     * @return mixed           the last insert ID from the database
+     * @return array           the inserted ID where keys are column names and values are column values
      */
-    public function insert(array $data, $update = false)
+    public function insert(array $data) : array
     {
         $table = $this->definition->getName();
         $columns = $this->definition->getFullColumns();
@@ -387,12 +406,29 @@ class Query
         }
         $sql = 'INSERT INTO '.$table.' ('.implode(', ', array_keys($insert)).') VALUES (??)';
         $par = [$insert];
-        if ($update) {
-            $sql .= 'ON DUPLICATE KEY UPDATE ';
-            $sql .= implode(', ', array_map(function ($v) { return $v . ' = ?'; }, array_keys($insert))) . ' ';
-            $par  = array_merge($par, $insert);
+        //if ($update) {
+        //    $sql .= 'ON DUPLICATE KEY UPDATE ';
+        //    $sql .= implode(', ', array_map(function ($v) { return $v . ' = ?'; }, array_keys($insert))) . ' ';
+        //    $par  = array_merge($par, $insert);
+        //}
+        if ($this->db->driver() === 'oracle') {
+            $primary = $this->definition->getPrimaryKey();
+            $ret = [];
+            foreach ($primary as $k) {
+                $ret[$k] = str_repeat(' ', 255);
+                $par[] = &$ret[$k];
+            }
+            $sql .= ' RETURNING ' . implode(',', $primary) . ' INTO ' . implode(',', array_fill(0, count($primary), '?'));
+            $this->db->query($sql, $par);
+            return $ret;
+        } else {
+            $ret = [];
+            $ins = $this->db->query($sql, $par)->insertId();
+            foreach ($this->definition->getPrimaryKey() as $k) {
+                $ret[$k] = $data[$k] ?? $ins;
+            }
+            return $ret;
         }
-        return $this->db->query($sql, $par)->insertId();
     }
     /**
      * Update the filtered rows with new data
@@ -429,9 +465,6 @@ class Query
             $sql .= $this->order[0];
             $par = array_merge($par, $this->order[1]);
         }
-        if ($this->limit) {
-            $sql .= $this->limit;
-        }
         return $this->db->query($sql, $par)->affected();
     }
     /**
@@ -455,9 +488,6 @@ class Query
         if (count($this->order)) {
             $sql .= $this->order[0];
             $par = array_merge($par, $this->order[1]);
-        }
-        if ($this->limit) {
-            $sql .= $this->limit;
         }
         return $this->db->query($sql, $par)->affected();
     }

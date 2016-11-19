@@ -224,10 +224,10 @@ class Manager
         $q = $this->schema->query($definition);
         if ($old === false) {
             $id = $q->insert($data);
-            if ($id !== null && count($definition->getPrimaryKey()) === 1) {
-                $field = current($definition->getPrimaryKey());
-                $entity->{$field} = $id;
-                $new[$field] = $id;
+            foreach ($id as $field) {
+                $_id = $id[$field] ?? array_shift($id);
+                $entity->{$field} = $_id;
+                $new[$field] = $_id;
             }
             $this->entities[$definition->getName()][json_encode($new)] = $entity;
         } else {

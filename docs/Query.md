@@ -5,7 +5,6 @@ A database query class
 
 | Name | Description |
 |------|-------------|
-|[fromDatabase](#vakata\orm\queryfromdatabase)|Create a query by table name|
 |[__construct](#vakata\orm\query__construct)|Create an instance|
 |[getDefinition](#vakata\orm\querygetdefinition)|Get the table definition of the queried table|
 |[filter](#vakata\orm\queryfilter)|Filter the results by a column and a value|
@@ -25,27 +24,6 @@ A database query class
 
 ---
 
-
-
-### vakata\orm\Query::fromDatabase
-Create a query by table name  
-
-
-```php
-public static function fromDatabase (  
-    \DatabaseInterface $db,  
-    string $table  
-) : \Query    
-```
-
-|  | Type | Description |
-|-----|-----|-----|
-| `$db` | `\DatabaseInterface` | the database instance |
-| `$table` | `string` | the table name to query |
-|  |  |  |
-| `return` | `\Query` | the query object |
-
----
 
 
 ### vakata\orm\Query::__construct
@@ -211,14 +189,14 @@ Apply an advanced limit
 ```php
 public function limit (  
     int $limit,  
-    int|integer $offset  
+    int $offset  
 ) : self    
 ```
 
 |  | Type | Description |
 |-----|-----|-----|
 | `$limit` | `int` | number of rows to return |
-| `$offset` | `int`, `integer` | number of rows to skip from the beginning |
+| `$offset` | `int` | number of rows to skip from the beginning (defaults to 0) |
 |  |  |  |
 | `return` | `self` |  |
 
@@ -285,17 +263,15 @@ Insert a new row in the table
 
 ```php
 public function insert (  
-    array $data,  
-    boolean $update  
-) : mixed    
+    array $data  
+) : array    
 ```
 
 |  | Type | Description |
 |-----|-----|-----|
 | `$data` | `array` | key value pairs, where each key is the column name and the value is the value to insert |
-| `$update` | `boolean` | if the PK exists should the row be updated with the new data, defaults to `false` |
 |  |  |  |
-| `return` | `mixed` | the last insert ID from the database |
+| `return` | `array` | the inserted ID where keys are column names and values are column values |
 
 ---
 

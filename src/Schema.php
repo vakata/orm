@@ -45,7 +45,7 @@ class Schema implements \JsonSerializable
         $definition = new Table($table);
         $columns = [];
         $primary = [];
-        $comment = null;
+        $comment = '';
         switch ($this->db->driver()) {
             case 'mysql':
             case 'mysqli':
