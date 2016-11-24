@@ -1,6 +1,8 @@
 <?php
 namespace vakata\orm;
 
+use \vakata\schema\Query;
+
 /**
  * A collection class - created automatically by the manager. It is traversable and countable.
  */
@@ -153,6 +155,9 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     {
         if ($this->single) {
             return $this->offsetGet(0);
+        }
+        if ($this->current === null) {
+            $this->current = $this->query->iterator();
         }
         return iterator_to_array($this->current);
     }

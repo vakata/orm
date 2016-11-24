@@ -25,7 +25,7 @@ class OrmTest extends \PHPUnit_Framework_TestCase
                 self::$db->query($query);
             }
         }
-        self::$schema = new \vakata\orm\Schema(self::$db);
+        self::$schema = new \vakata\schema\Schema(self::$db);
     }
     public static function tearDownAfterClass() {
         self::$db->query("SET FOREIGN_KEY_CHECKS = 0");

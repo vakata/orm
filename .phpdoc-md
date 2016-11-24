@@ -7,10 +7,6 @@ return (object)[
         '\\vakata\\orm\\Manager',
         '\\vakata\\orm\\Collection',
         '\\vakata\\orm\\Row',
-        '\\vakata\\orm\\Query',
-        '\\vakata\\orm\\Table',
-        '\\vakata\\orm\\Column',
-        '\\vakata\\orm\\Schema',
         '\\vakata\\orm\\ORMException'
     ],
 ];

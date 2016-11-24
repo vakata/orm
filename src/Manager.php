@@ -1,6 +1,9 @@
 <?php
 namespace vakata\orm;
 
+use \vakata\schema\Schema;
+use \vakata\schema\Table;
+
 // TODO: use db::get(), not db::all()
 // TODO: Oracle all uppercase? - fix at least in row?
 
@@ -65,6 +68,10 @@ class Manager
         return !count($args) ?
             new Collection($this->schema->query($this->classes[$class] ?? $search), $this, $class) :
             $this->entity($class, $args, null, $this->schema->getTable($this->classes[$class] ?? $search));
+    }
+    public function getSchema()
+    {
+        return $this->schema;
     }
     /**
      * Create an instance
