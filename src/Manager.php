@@ -4,9 +4,6 @@ namespace vakata\orm;
 use \vakata\schema\Schema;
 use \vakata\schema\Table;
 
-// TODO: use db::get(), not db::all()
-// TODO: Oracle all uppercase? - fix at least in row?
-
 /**
  * Manager ORM class
  */
