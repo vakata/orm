@@ -10,14 +10,17 @@ class Row
 
     public function __construct(array $data = [])
     {
-        $this->data = $data;
+        $this->data = [];
+        foreach ($data as $k => $v) {
+            $this->data[strtolower($k)] = $v;
+        }
     }
     public function __get($key)
     {
-        return $this->data[$key] ?? null;
+        return $this->data[strtolower($key)] ?? null;
     }
     public function __set($key, $value)
     {
-        $this->data[$key] = $value;
+        $this->data[strtolower($key)] = $value;
     }
 }
