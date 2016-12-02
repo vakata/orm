@@ -1,8 +1,8 @@
 <?php
 namespace vakata\orm;
 
-use \vakata\schema\Schema;
-use \vakata\schema\Table;
+use \vakata\database\DatabaseInterface;
+use \vakata\database\Table;
 
 /**
  * Manager ORM class
@@ -19,7 +19,7 @@ class Manager
      * @param  Schema            $schema  the database schema
      * @param  callable|null     $creator optional function used to create all necessary classes
      */
-    public function __construct(Schema $schema, callable $creator = null)
+    public function __construct(DatabaseInterface $schema, callable $creator = null)
     {
         $this->schema = $schema;
         $this->creator = $creator !== null ?
@@ -63,8 +63,8 @@ class Manager
     {
         $class = $this->getClass($search, Row::class);
         return !count($args) ?
-            new Collection($this->schema->query($this->classes[$class] ?? $search), $this, $class) :
-            $this->entity($class, $args, null, $this->schema->getTable($this->classes[$class] ?? $search));
+            new Collection($this->schema->table($this->classes[$class] ?? $search), $this, $class) :
+            $this->entity($class, $args, null, $this->schema->definition($this->classes[$class] ?? $search));
     }
     public function getSchema()
     {
@@ -81,7 +81,7 @@ class Manager
     {
         $class = $this->getClass($search, Row::class);
         if (!$definition) {
-            $definition = $this->schema->getTable($this->classes[$class] ?? $search);
+            $definition = $this->schema->definition($this->classes[$class] ?? $search);
         }
         if (!$definition) {
             throw new ORMException('No definition');
@@ -116,7 +116,7 @@ class Manager
             if (!isset($this->classes[$class])) {
                 throw new ORMException('No definition');
             }
-            $definition = $this->schema->getTable($this->classes[$class]);
+            $definition = $this->schema->definition($this->classes[$class]);
         }
         if (!isset($this->entities[$definition->getName()])) {
             $this->entities[$definition->getName()] = [];
@@ -129,7 +129,7 @@ class Manager
             return $this->entities[$definition->getName()][json_encode($pk)];
         }
         if ($data === null) {
-            $table = $this->schema->query($definition);
+            $table = $this->schema->table($definition->getName());
             foreach ($pk as $field => $value) {
                 $table->filter($field, $value);
             }
@@ -147,7 +147,7 @@ class Manager
             $instance->{$column} = $data[$column] ?? null;
         }
         foreach ($definition->getRelations() as $name => $relation) {
-            $query = $this->schema->query($relation['table']);
+            $query = $this->schema->table($relation['table']->getName());
             if ($relation['sql']) {
                 $query->where($relation['sql'], $relation['par']);
             }
@@ -193,7 +193,7 @@ class Manager
     {
         $class = get_class($entity);
         $class = $this->getClass($class, Row::class);
-        $definition = $this->schema->getTable($this->classes[$class] ?? $entity->__definition);
+        $definition = $this->schema->definition($this->classes[$class] ?? $entity->__definition);
         if (!$definition) {
             throw new ORMException('No definition');
         }
@@ -225,7 +225,7 @@ class Manager
             }
         }
         
-        $q = $this->schema->query($definition);
+        $q = $this->schema->table($definition->getName());
         if ($old === false) {
             $id = $q->insert($data);
             foreach ($id as $field) {
@@ -257,7 +257,7 @@ class Manager
                             }
                         }
                         if ($old !== false) {
-                            $query = $this->schema->query($relation['table']);
+                            $query = $this->schema->table($relation['table']->getName());
                             $data = [];
                             foreach ($relation['keymap'] as $local => $remote) {
                                 $query->filter($remote, $old[$local]);
@@ -267,7 +267,7 @@ class Manager
                         }
                     }
                 } else {
-                    $query = $this->schema->query($relation['pivot']);
+                    $query = $this->schema->table($relation['pivot']->getName());
                     $data = [];
                     foreach ($relation['keymap'] as $local => $remote) {
                         $query->filter($remote, $new[$local]);
@@ -297,7 +297,7 @@ class Manager
     {
         $class = get_class($entity);
         $class = $this->getClass($class, Row::class);
-        $definition = $this->schema->getTable($this->classes[$class] ?? $entity->__definition);
+        $definition = $this->schema->definition($this->classes[$class] ?? $entity->__definition);
         if (!$definition) {
             throw new ORMException('No definition');
         }
@@ -317,7 +317,7 @@ class Manager
             $pk[$field] = $entity->{$field};
         }
 
-        $q = $this->schema->query($definition);
+        $q = $this->schema->table($definition->getName());
         foreach ($pk as $field => $value) {
             $q->filter($field, $value);
         }
@@ -325,14 +325,14 @@ class Manager
         // delete relations (might not be necessary - FK may have already deleted those)
         foreach ($definition->getRelations() as $name => $relation) {
             if ($relation['pivot']) {
-                $query = $this->schema->query($relation['pivot']);
+                $query = $this->schema->table($relation['pivot']->getName());
                 foreach ($relation['keymap'] as $local => $remote) {
                     $query->filter($remote, $pk[$local]);
                 }
                 $query->delete();
             } else {
                 if (!count(array_diff(array_keys($relation['keymap']), array_keys($pk)))) {
-                    $query = $this->schema->query($relation['table']);
+                    $query = $this->schema->table($relation['table']->getName());
                     if ($relation['sql']) {
                         $query->where($relation['sql'], $relation['par']);
                     }

@@ -1,7 +1,7 @@
 <?php
 namespace vakata\orm;
 
-use \vakata\schema\Query;
+use \vakata\database\TableQuery as Query;
 
 /**
  * A collection class - created automatically by the manager. It is traversable and countable.
