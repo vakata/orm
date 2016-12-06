@@ -187,9 +187,10 @@ class Manager
     /**
      * Persist an instance to DB
      * @param  mixed $entity the instance object
+     * @param  bool  $readRelations should related entities be read and update local entity fields, default to false
      * @return array         the instance's primary key
      */
-    public function save($entity) : array
+    public function save($entity, bool $readRelations = false) : array
     {
         $class = get_class($entity);
         $class = $this->getClass($class, Row::class);
@@ -216,11 +217,13 @@ class Manager
         }
 
         // gather values from relations and set local fields
-        foreach ($definition->getRelations() as $name => $relation) {
-            if (count(array_diff(array_keys($relation['keymap']), array_keys($new)))) {
-                $obj = $entity->{$name}[0];
-                foreach ($relation['keymap'] as $local => $remote) {
-                    $data[$local] = $obj->{$remote};
+        if ($readRelations) {
+            foreach ($definition->getRelations() as $name => $relation) {
+                if (count(array_diff(array_keys($relation['keymap']), array_keys($new)))) {
+                    $obj = $entity->{$name}[0];
+                    foreach ($relation['keymap'] as $local => $remote) {
+                        $data[$local] = $obj->{$remote};
+                    }
                 }
             }
         }
@@ -228,10 +231,9 @@ class Manager
         $q = $this->schema->table($definition->getName());
         if ($old === false) {
             $id = $q->insert($data);
-            foreach ($id as $field) {
-                $_id = $id[$field] ?? array_shift($id);
-                $entity->{$field} = $_id;
-                $new[$field] = $_id;
+            foreach ($id as $fk => $fv) {
+                $entity->{$fk} = $fv;
+                $new[$fk] = $fv;
             }
             $this->entities[$definition->getName()][json_encode($new)] = $entity;
         } else {
