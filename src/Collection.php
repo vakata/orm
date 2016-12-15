@@ -137,6 +137,17 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
         $this->current = null;
         return $this;
     }
+    /**
+     * Specify which columns to fetch (be default all table columns are fetched)
+     * @param  array $fields optional array of columns to select (related columns can be used too)
+     * @return self
+     */
+    public function columns(array $fields) : Collection
+    {
+        $this->query->columns($fields);
+        $this->current = null;
+        return $this;
+    }
     public function __call($name, $data)
     {
         if (strpos($name, 'filterBy') === 0) {
