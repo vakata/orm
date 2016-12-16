@@ -269,6 +269,16 @@ class Manager
                         }
                     }
                 } else {
+                    if ($old !== false && json_encode($new) !== json_encode($old)) { // only on new ID
+                        $query = $this->schema->table($relation['pivot']->getName());
+                        $data = [];
+                        foreach ($relation['keymap'] as $local => $remote) {
+                            $query->filter($remote, $old[$local]);
+                            $data[$remote] = $new[$local];
+                        }
+                        $query->update($data);
+                    }
+                    /*
                     $query = $this->schema->table($relation['pivot']->getName());
                     $data = [];
                     foreach ($relation['keymap'] as $local => $remote) {
@@ -285,6 +295,7 @@ class Manager
                             $query->insert($data);
                         }
                     }
+                    */
                 }
             }
         }
