@@ -51,9 +51,9 @@ class OrmTest extends \PHPUnit_Framework_TestCase
         $manager = new \vakata\orm\Manager(self::$db);
 
         $books = $manager->book();
-        $this->assertEquals($books[0]->author[0]->name, 'Terry Pratchett');
-        $this->assertEquals(count($books[0]->tag), 2);
-        $this->assertEquals($books[0]->author[0]->book[0]->tag[0]->book[0]->author[0]->name, 'Terry Pratchett');
+        $this->assertEquals('Terry Pratchett', $books[0]->author[0]->name);
+        $this->assertEquals(2, count($books[0]->tag));
+        $this->assertEquals('Terry Pratchett', $books[0]->author[0]->book[0]->tag[0]->book[0]->author[0]->name);
     }
 
     public function testRelationsWith() {
@@ -121,8 +121,10 @@ class OrmTest extends \PHPUnit_Framework_TestCase
     }
     public function testManagerCreate() {
         $manager = new \vakata\orm\Manager(self::$db);
-        $tag = $manager->create('tag', [ 'name' => 'TEST' ]);
-        $manager->save($tag);
+        $tag = new \StdClass();
+        $tag->id = null;
+        $tag->name = 'TEST'; // $manager->create('tag', [ 'name' => 'TEST' ]);
+        $manager->save($tag, false, 'tag');
         $this->assertEquals($manager->tag()[3]->name, 'TEST');
     }
     public function testUpdate() {

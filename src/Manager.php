@@ -11,7 +11,7 @@ class Manager
 {
     protected $schema;
     protected $creator;
-    protected $classes = [];
+    protected $tableClassMap = [];
     protected $entities = [];
 
     /**
@@ -32,156 +32,81 @@ class Manager
      * Add a class by name and link it to a table
      * @param  string          $class      the class to create when reading from the table
      * @param  string          $table      the table name associated with the class
-     * @return  self
+     * @return $this
      */
     public function addClass(string $class, string $table)
     {
-        $this->classes[$class] = $table;
+        $this->tableClassMap[$table] = $class;
         return $this;
     }
-    protected function getClass(string $search, $default = null)
+    public function __call(string $table, array $args)
     {
-        foreach ($this->classes as $class => $table) {
-            if (strtolower($class) === strtolower($search)) {
-                return $class;
-            }
-        }
-        foreach ($this->classes as $class => $table) {
-            if (strtolower($table) === strtolower($search)) {
-                return $class;
-            }
-        }
-        foreach ($this->classes as $class => $table) {
-            if (strtolower(basename(str_replace('\\', '/', $class))) === strtolower($search)) {
-                return $class;
-            }
-        }
-        return $default;
+        $collection = new Collection($this, $this->schema, $table);
+        return !count($args) ?
+            $collection :
+            $collection->find($args[0]);
     }
 
-    public function __call(string $search, array $args)
+    public function instance(string $tableName, array $data)
     {
-        $class = $this->getClass($search, Row::class);
-        return !count($args) ?
-            new Collection($this->schema->table($this->classes[$class] ?? $search), $this, $class) :
-            $this->entity($class, $args, null, $this->schema->definition($this->classes[$class] ?? $search));
-    }
-    public function getSchema()
-    {
-        return $this->schema;
-    }
-    /**
-     * Create an instance
-     * @param  string               $search     the type of instance to create (class name, table name, etc)
-     * @param  array                $data       optional array of data to populate with (defaults to an empty array)
-     * @param  Table|null $definition optional explicit definition to use
-     * @return mixed                            the newly created instance
-     */
-    public function create(string $search, array $data = [], Table $definition = null)
-    {
-        $class = $this->getClass($search, Row::class);
-        if (!$definition) {
-            $definition = $this->schema->definition($this->classes[$class] ?? $search);
+        $table = $this->schema->definition($tableName);
+        $pkey = [];
+        foreach ($table->getPrimaryKey() as $field) {
+            $pkey[$field] = $data[$field];
         }
-        if (!$definition) {
-            throw new ORMException('No definition');
+        if (!isset($this->entities[$table->getName()])) {
+            $this->entities[$table->getName()] = [];
         }
-        $instance = call_user_func($this->creator, $class);
-        if ($class === Row::class) {
-            $instance->__definition = $definition->getName();
+        if (isset($this->entities[$table->getName()][json_encode($pkey)])) {
+            return $this->entities[$table->getName()][json_encode($pkey)];
         }
-        foreach ($definition->getColumns() as $column) {
-            $instance->{$column} = $data[$column] ?? null;
+        $inst = call_user_func($this->creator, $this->tableClassMap[$table->getName()] ?? \StdClass::class);
+        foreach ($table->getColumns() as $column) {
+            $inst->{$column} = $data[$column] ?? null;
         }
-        foreach ($definition->getRelations() as $name => $relation) {
-            if ($relation['many'] === false && isset($data[$name])) {
-                $data[$name] = [$data[$name]];
+        foreach ($table->getRelations() as $name => $relation) {
+            if (isset($data[$name])) {
+                if ($relation->many) {
+                    $inst->{$name} = new RelationCollection($this, $relation->table->getName(), array_map(function ($v) {
+                        return $this->instance($relation->table->getName(), $v);
+                    }, $data[$name]));
+                } else {
+                    $inst->{$name} = new RelationCollection($this, $relation->table->getName(), [$this->instance($relation->table->getName(), $data[$name])]);
+                }
+                continue;
             }
-            $instance->{$name} = $data[$name] ?? null;
-        }
-        return $instance;
-    }
-    /**
-     * Create an entity
-     * @param  string               $class      the class name
-     * @param  array                $key        the ID of the entity
-     * @param  array|null           $data       optional data to populate with, if missing it is gathered from DB
-     * @param  Table|null $definition optional explicit definition to use when creating the instance
-     * @return mixed                            the instance
-     */
-    public function entity(string $class, array $key, array $data = null, Table $definition = null)
-    {
-        $class = $this->getClass($class, Row::class);
-        if (!$definition) {
-            if (!isset($this->classes[$class])) {
-                throw new ORMException('No definition');
+            $query = $this->schema->table($relation->table->getName());
+            if ($relation->sql) {
+                $query->where($relation->sql, $relation->par);
             }
-            $definition = $this->schema->definition($this->classes[$class]);
-        }
-        if (!isset($this->entities[$definition->getName()])) {
-            $this->entities[$definition->getName()] = [];
-        }
-        $pk = [];
-        foreach ($definition->getPrimaryKey() as $field) {
-            $pk[$field] = $key[$field] ?? array_shift($key);
-        }
-        if (isset($this->entities[$definition->getName()][json_encode($pk)])) {
-            return $this->entities[$definition->getName()][json_encode($pk)];
-        }
-        if ($data === null) {
-            $table = $this->schema->table($definition->getName());
-            foreach ($pk as $field => $value) {
-                $table->filter($field, $value);
-            }
-            $data = $table->select();
-            if (count($data) === 0) {
-                throw new ORMException('Entry not found');
-            }
-            $data = $data[0];
-        }
-        $instance = call_user_func($this->creator, $class);
-        if ($class === Row::class) {
-            $instance->__definition = $definition->getName();
-        }
-        foreach ($definition->getColumns() as $column) {
-            $instance->{$column} = $data[$column] ?? null;
-        }
-        foreach ($definition->getRelations() as $name => $relation) {
-            $query = $this->schema->table($relation['table']->getName());
-            if ($relation['sql']) {
-                $query->where($relation['sql'], $relation['par']);
-            }
-            if ($relation['pivot']) {
+            if ($relation->pivot) {
                 $nm = null;
-                foreach ($relation['table']->getRelations() as $rname => $rdata) {
-                    if ($rdata['pivot'] && $rdata['pivot']->getName() === $relation['pivot']->getName()) {
+                foreach ($relation->table->getRelations() as $rname => $rdata) {
+                    if ($rdata->pivot && $rdata->pivot->getName() === $relation->pivot->getName()) {
                         $nm = $rname;
                     }
                 }
                 if (!$nm) {
-                    $nm = $definition->getName();
-                    $relation['table']->manyToMany(
-                        $definition,
-                        $relation['pivot'],
+                    $nm = $table->getName();
+                    $relation->table->manyToMany(
+                        $table,
+                        $relation->pivot,
                         $nm,
-                        array_flip($relation['keymap']),
-                        $relation['pivot_keymap']
+                        array_flip($relation->keymap),
+                        $relation->pivot_keymap
                     );
                 }
-                foreach ($pk as $k => $v) {
+                foreach ($pkey as $k => $v) {
                     $query->filter($nm . '.' . $k, $v ?? null);
                 }
             } else {
-                foreach ($relation['keymap'] as $k => $v) {
+                foreach ($relation->keymap as $k => $v) {
                     $query->filter($v, $data[$k] ?? null);
                 }
             }
-            if ($relation['many'] === false && isset($data[$name])) {
-                $data[$name] = [$data[$name]];
-            }
-            $instance->{$name} = new Collection($query, $this, $class, $data[$name] ?? null, $relation['many'] === false);
+            $inst->{$name} = new RelationCollection($this, $relation->table->getName(), $query->iterator());
         }
-        return $this->entities[$definition->getName()][json_encode($pk)] = $instance;
+        return $this->entities[$table->getName()][json_encode($pkey)] = $inst;
     }
 
     /**
@@ -190,11 +115,23 @@ class Manager
      * @param  bool  $readRelations should related entities be read and update local entity fields, default to false
      * @return array         the instance's primary key
      */
-    public function save($entity, bool $readRelations = false) : array
+    public function save($entity, bool $readRelations = false, string $table = null) : array
     {
-        $class = get_class($entity);
-        $class = $this->getClass($class, Row::class);
-        $definition = $this->schema->definition($this->classes[$class] ?? $entity->__definition);
+        $old = null;
+        if (!$table) {
+            $table = array_search(get_class($entity), $this->tableClassMap);
+            if (!$table) {
+                foreach ($this->entities as $t => $objects) {
+                    if (($old = array_search($entity, $objects, true)) !== false) {
+                        $table = $t;
+                    }
+                }
+                if (!$table) {
+                    throw new ORMException('No table');
+                }
+            }
+        }
+        $definition = $this->schema->definition($table);
         if (!$definition) {
             throw new ORMException('No definition');
         }
@@ -202,12 +139,13 @@ class Manager
         foreach ($definition->getColumns() as $column) {
             $data[$column] = $entity->{$column} ?? null;
         }
-
         // primary keys
         if (!isset($this->entities[$definition->getName()])) {
             $this->entities[$definition->getName()] = [];
         }
-        $old = array_search($entity, $this->entities[$definition->getName()], true);
+        if (!$old) {
+            $old = array_search($entity, $this->entities[$definition->getName()], true);
+        }
         if ($old !== false) {
             $old = json_decode($old, true);
         }
@@ -219,15 +157,14 @@ class Manager
         // gather values from relations and set local fields
         if ($readRelations) {
             foreach ($definition->getRelations() as $name => $relation) {
-                if (count(array_diff(array_keys($relation['keymap']), array_keys($new)))) {
+                if (count(array_diff(array_keys($relation->keymap), array_keys($new)))) {
                     $obj = $entity->{$name}[0];
-                    foreach ($relation['keymap'] as $local => $remote) {
+                    foreach ($relation->keymap as $local => $remote) {
                         $data[$local] = $obj->{$remote};
                     }
                 }
             }
         }
-        
         $q = $this->schema->table($definition->getName());
         if ($old === false) {
             $id = $q->insert($data);
@@ -248,20 +185,20 @@ class Manager
         }
 
         foreach ($definition->getRelations() as $name => $relation) {
-            if (!count(array_diff(array_keys($relation['keymap']), array_keys($new)))) {
-                if (!$relation['pivot']) {
+            if (!count(array_diff(array_keys($relation->keymap), array_keys($new)))) {
+                if (!$relation->pivot) {
                     if ($old === false || json_encode($new) !== json_encode($old)) { // only on new ID
                         if (is_array($entity->{$name}) || $entity->{$name} instanceof \Traversable) {
                             foreach ($entity->{$name} as $obj) {
-                                foreach ($relation['keymap'] as $local => $remote) {
+                                foreach ($relation->keymap as $local => $remote) {
                                     $obj->{$remote} = $new[$local];
                                 }
                             }
                         }
                         if ($old !== false) {
-                            $query = $this->schema->table($relation['table']->getName());
+                            $query = $this->schema->table($relation->table->getName());
                             $data = [];
-                            foreach ($relation['keymap'] as $local => $remote) {
+                            foreach ($relation->keymap as $local => $remote) {
                                 $query->filter($remote, $old[$local]);
                                 $data[$remote] = $new[$local];
                             }
@@ -270,9 +207,9 @@ class Manager
                     }
                 } else {
                     if ($old !== false && json_encode($new) !== json_encode($old)) { // only on new ID
-                        $query = $this->schema->table($relation['pivot']->getName());
+                        $query = $this->schema->table($relation->pivot->getName());
                         $data = [];
-                        foreach ($relation['keymap'] as $local => $remote) {
+                        foreach ($relation->keymap as $local => $remote) {
                             $query->filter($remote, $old[$local]);
                             $data[$remote] = $new[$local];
                         }
@@ -306,11 +243,20 @@ class Manager
      * @param  mixed $entity the instance to remove
      * @return int           the deleted rows count
      */
-    public function delete($entity) : int
+    public function delete($entity, string $table = null) : int
     {
-        $class = get_class($entity);
-        $class = $this->getClass($class, Row::class);
-        $definition = $this->schema->definition($this->classes[$class] ?? $entity->__definition);
+        if (!$table) {
+            $table = array_search(get_class($entity), $this->tableClassMap);
+            foreach ($this->entities as $t => $objects) {
+                if (($old = array_search($entity, $objects, true)) !== false) {
+                    $table = $t;
+                }
+            }
+            if (!$table) {
+                throw new ORMException('No table');
+            }
+        }
+        $definition = $this->schema->definition($table);
         if (!$definition) {
             throw new ORMException('No definition');
         }
@@ -337,30 +283,30 @@ class Manager
         $res = $q->delete();
         // delete relations (might not be necessary - FK may have already deleted those)
         foreach ($definition->getRelations() as $name => $relation) {
-            if ($relation['pivot']) {
-                $query = $this->schema->table($relation['pivot']->getName());
-                foreach ($relation['keymap'] as $local => $remote) {
+            if ($relation->pivot) {
+                $query = $this->schema->table($relation->pivot->getName());
+                foreach ($relation->keymap as $local => $remote) {
                     $query->filter($remote, $pk[$local]);
                 }
                 $query->delete();
             } else {
-                if (!count(array_diff(array_keys($relation['keymap']), array_keys($pk)))) {
-                    $query = $this->schema->table($relation['table']->getName());
-                    if ($relation['sql']) {
-                        $query->where($relation['sql'], $relation['par']);
+                if (!count(array_diff(array_keys($relation->keymap), array_keys($pk)))) {
+                    $query = $this->schema->table($relation->table->getName());
+                    if ($relation->sql) {
+                        $query->where($relation->sql, $relation->par);
                     }
-                    foreach ($relation['keymap'] as $local => $remote) {
+                    foreach ($relation->keymap as $local => $remote) {
                         $query->filter($remote, $pk[$local]);
                     }
-                    foreach ($query->select($relation['table']->getPrimaryKey()) as $row) {
+                    foreach ($query->select($relation->table->getPrimaryKey()) as $row) {
                         $key = [];
-                        foreach ($relation['table']->getPrimaryKey() as $field) {
+                        foreach ($relation->table->getPrimaryKey() as $field) {
                             $key[$field] = $row[$field] ?? null;
                         }
-                        if (isset($this->entities[$relation['table']->getName()]) &&
-                            isset($this->entities[$relation['table']->getName()][json_encode($key)])
+                        if (isset($this->entities[$relation->table->getName()]) &&
+                            isset($this->entities[$relation->table->getName()][json_encode($key)])
                         ) {
-                            unset($this->entities[$relation['table']->getName()][json_encode($key)]);
+                            unset($this->entities[$relation->table->getName()][json_encode($key)]);
                         }
                     }
                     $query->delete();
