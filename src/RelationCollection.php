@@ -2,6 +2,7 @@
 namespace vakata\orm;
 
 use \vakata\database\DatabaseInterface;
+use \vakata\database\TableQuery;
 use \vakata\database\TableQueryIterator;
 
 class RelationCollection implements \Iterator, \ArrayAccess, \Countable
@@ -27,16 +28,33 @@ class RelationCollection implements \Iterator, \ArrayAccess, \Countable
     {
         $this->table = $table;
         $this->manager = $manager;
-        $this->iterator = $data instanceof \Iterator ? $data : (new \ArrayObject($data))->getIterator();
+        $this->data = $data;
+        $this->iterator = null;
+        // $data instanceof \Iterator ? $data : (new \ArrayObject($data))->getIterator();
+    }
+    protected function iterator()
+    {
+        if (!$this->iterator) {
+            if ($this->data instanceof TableQuery) {
+                $this->iterator = $this->data->iterator();
+            } else if ($this->data instanceof \Iterator) {
+                $this->iterator = $this->data;
+            } else {
+                $this->iterator = (new \ArrayObject($this->data))->getIterator();
+            }
+        }
+        return $this->iterator;
     }
     public function hydrate()
     {
+        $this->iterator();
         if ($this->iterator instanceof TableQueryIterator) {
             $tmp = [];
             $pos = $this->iterator->key();
             foreach ($this->iterator as $v) {
                 $tmp[] = $v;
             }
+            $this->data = $tmp;
             $this->iterator = (new \ArrayObject($tmp))->getIterator();
             if ($this->iterator->offsetExists($pos)) {
                 $this->iterator->seek($pos);
@@ -47,51 +65,51 @@ class RelationCollection implements \Iterator, \ArrayAccess, \Countable
 
     public function key()
     {
-        return $this->iterator->key();
+        return $this->iterator()->key();
     }
     public function current()
     {
-        if(!($data = $this->iterator->current())) {
+        if(!($data = $this->iterator()->current())) {
             return null;
         }
         return $data instanceof \StdClass ? $data : $this->manager->instance($this->table, $data);
     }
     public function rewind()
     {
-        return $this->iterator->rewind();
+        return $this->iterator()->rewind();
     }
     public function next()
     {
-        return $this->iterator->next();
+        return $this->iterator()->next();
     }
     public function valid()
     {
-        return $this->iterator->valid();
+        return $this->iterator()->valid();
     }
     public function offsetGet($offset)
     {
-        if(!($data = $this->iterator->offsetGet($offset))) {
+        if(!($data = $this->iterator()->offsetGet($offset))) {
             return null;
         }
         return $data instanceof \StdClass ? $data : $this->manager->instance($this->table, $data);
     }
     public function offsetExists($offset)
     {
-        return $this->iterator->offsetExists($offset);
+        return $this->iterator()->offsetExists($offset);
     }
     public function offsetUnset($offset)
     {
         $this->hydrate();
-        return $this->iterator->offsetUnset($offset);
+        return $this->iterator()->offsetUnset($offset);
     }
     public function offsetSet($offset, $value)
     {
         $this->hydrate();
-        return $this->iterator->offsetSet($offset, $value);
+        return $this->iterator()->offsetSet($offset, $value);
     }
     public function count()
     {
-        $this->hydrate();
-        return $this->iterator->count();
+        // $this->hydrate();
+        return count($this->data); // $this->iterator()->count();
     }
 }

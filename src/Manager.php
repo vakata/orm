@@ -104,7 +104,7 @@ class Manager
                     $query->filter($v, $data[$k] ?? null);
                 }
             }
-            $inst->{$name} = new RelationCollection($this, $relation->table->getName(), $query->iterator());
+            $inst->{$name} = new RelationCollection($this, $relation->table->getName(), $query);
         }
         return $this->entities[$table->getName()][json_encode($pkey)] = $inst;
     }
