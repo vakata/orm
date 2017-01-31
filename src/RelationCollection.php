@@ -19,10 +19,6 @@ class RelationCollection implements \Iterator, \ArrayAccess, \Countable
      * @var \Iterator
      */
     protected $iterator;
-    /**
-     * @var array
-     */
-    protected $hydrated = [];
 
     public function __construct(Manager $manager, string $table, $data)
     {

@@ -13,6 +13,9 @@ class Manager
     protected $creator;
     protected $tableClassMap = [];
     protected $entities = [];
+    protected $hashes = [];
+    protected $added = [];
+    protected $deleted = [];
 
     /**
      * Create an instance
@@ -41,7 +44,7 @@ class Manager
     }
     public function __call(string $table, array $args)
     {
-        $collection = new Collection($this, $this->schema, $table);
+        $collection = new Collection($this, $this->schema->{$table}());
         return !count($args) ?
             $collection :
             $collection->find($args[0]);
@@ -56,14 +59,18 @@ class Manager
         }
         if (!isset($this->entities[$table->getName()])) {
             $this->entities[$table->getName()] = [];
+            $this->hashes[$table->getName()] = [];
         }
         if (isset($this->entities[$table->getName()][json_encode($pkey)])) {
             return $this->entities[$table->getName()][json_encode($pkey)];
         }
         $inst = call_user_func($this->creator, $this->tableClassMap[$table->getName()] ?? \StdClass::class);
+        $hash = [];
         foreach ($table->getColumns() as $column) {
+            $hash[$column] = $hash[$column] ?? null;
             $inst->{$column} = $data[$column] ?? null;
         }
+        $hash = sha1(serialize($hash));
         foreach ($table->getRelations() as $name => $relation) {
             if (isset($data[$name])) {
                 if ($relation->many) {
@@ -106,7 +113,54 @@ class Manager
             }
             $inst->{$name} = new RelationCollection($this, $relation->table->getName(), $query);
         }
+        $this->hashes[$table->getName()][json_encode($pkey)] = $hash;
         return $this->entities[$table->getName()][json_encode($pkey)] = $inst;
+    }
+    public function add($entity, string $table = null) {
+        if (!$table) {
+            $table = array_search(get_class($entity), $this->tableClassMap);
+            if (!$table) {
+                foreach ($this->entities as $t => $objects) {
+                    if (($old = array_search($entity, $objects, true)) !== false) {
+                        $table = $t;
+                    }
+                }
+                if (!$table) {
+                    throw new ORMException('No table');
+                }
+            }
+        }
+        $definition = $this->schema->definition($table);
+        if (!$definition) {
+            throw new ORMException('No definition');
+        }
+        if (array_search($entity, $this->added[$table], true) === false) {
+            $this->added[$table][] = $entity;
+        }
+    }
+    public function remove($entity, string $table = null) {
+        if (!$table) {
+            $table = array_search(get_class($entity), $this->tableClassMap);
+            if (!$table) {
+                foreach ($this->entities as $t => $objects) {
+                    if (($old = array_search($entity, $objects, true)) !== false) {
+                        $table = $t;
+                    }
+                }
+                if (!$table) {
+                    throw new ORMException('No table');
+                }
+            }
+        }
+        $definition = $this->schema->definition($table);
+        if (!$definition) {
+            throw new ORMException('No definition');
+        }
+        $pkey = [];
+        foreach ($table->getPrimaryKey() as $field) {
+            $pkey[$field] = $entity->{$field} ?? null;
+        }
+        $this->deleted[$table][json_encode($pkey)] = $entity;
     }
 
     /**
@@ -139,9 +193,11 @@ class Manager
         foreach ($definition->getColumns() as $column) {
             $data[$column] = $entity->{$column} ?? null;
         }
+        $hash = sha1(serialize($data));
         // primary keys
         if (!isset($this->entities[$definition->getName()])) {
             $this->entities[$definition->getName()] = [];
+            $this->hashes[$definition->getName()] = [];
         }
         if (!$old) {
             $old = array_search($entity, $this->entities[$definition->getName()], true);
@@ -180,9 +236,11 @@ class Manager
             $q->update($data);
             if (json_encode($new) !== json_encode($old)) {
                 unset($this->entities[$definition->getName()][json_encode($old)]);
+                unset($this->hashes[$definition->getName()][json_encode($old)]);
                 $this->entities[$definition->getName()][json_encode($new)] = $entity;
             }
         }
+        $this->hashes[$definition->getName()][json_encode($new)] = $hash;
 
         foreach ($definition->getRelations() as $name => $relation) {
             if (!count(array_diff(array_keys($relation->keymap), array_keys($new)))) {
@@ -307,6 +365,7 @@ class Manager
                             isset($this->entities[$relation->table->getName()][json_encode($key)])
                         ) {
                             unset($this->entities[$relation->table->getName()][json_encode($key)]);
+                            unset($this->hashes[$relation->table->getName()][json_encode($key)]);
                         }
                     }
                     $query->delete();
@@ -317,7 +376,45 @@ class Manager
             isset($this->entities[$definition->getName()][json_encode($pk)])
         ) {
             unset($this->entities[$definition->getName()][json_encode($pk)]);
+            unset($this->hashes[$definition->getName()][json_encode($pk)]);
         }
         return $res;
+    }
+
+    public function saveChanges()
+    {
+        $this->schema->begin();
+        try {
+            foreach ($this->added as $table => $objects) {
+                foreach ($objects as $instance) {
+                    $this->save($instance, false, $table);
+                }
+            }
+            foreach ($this->deleted as $table => $objects) {
+                foreach ($objects as $pk => $instance) {
+                    if (isset($this->entities[$table][$pk])) {
+                        unset($this->entities[$table][$pk]);
+                        unset($this->hashes[$table][$pk]);
+                    }
+                    $this->delete($instance, false, $table);
+                }
+            }
+            foreach ($this->entities as $table => $objects) {
+                $definition = $this->schema->definition($table);
+                foreach ($objects as $pk => $instance) {
+                    $data = [];
+                    foreach ($definition->getColumns() as $column) {
+                        $data[$column] = $entity->{$column} ?? null;
+                    }
+                    if (sha1(serialize($data)) !== $this->hashes[$table][$pk]) {
+                        $this->save($instance, false, $table);
+                    }
+                }
+            }
+            $this->schema->commit();
+        } catch (\Exception $e) {
+            $this->schema->rollback();
+            throw $e;
+        }
     }
 }
