@@ -19,6 +19,14 @@ class RelationCollection implements \Iterator, \ArrayAccess, \Countable
      * @var \Iterator
      */
     protected $iterator;
+    /**
+     * @var bool
+     */
+    protected $consumed = false;
+    /**
+     * @var bool
+     */
+    protected $modified = false;
 
     public function __construct(Manager $manager, string $table, $data)
     {
@@ -80,10 +88,12 @@ class RelationCollection implements \Iterator, \ArrayAccess, \Countable
     }
     public function valid()
     {
+        $this->consumed = true;
         return $this->iterator()->valid();
     }
     public function offsetGet($offset)
     {
+        $this->consumed = true;
         if(!($data = $this->iterator()->offsetGet($offset))) {
             return null;
         }
@@ -91,15 +101,18 @@ class RelationCollection implements \Iterator, \ArrayAccess, \Countable
     }
     public function offsetExists($offset)
     {
+        $this->consumed = true;
         return $this->iterator()->offsetExists($offset);
     }
     public function offsetUnset($offset)
     {
+        $this->modified = true;
         $this->hydrate();
         return $this->iterator()->offsetUnset($offset);
     }
     public function offsetSet($offset, $value)
     {
+        $this->modified = true;
         $this->hydrate();
         return $this->iterator()->offsetSet($offset, $value);
     }
@@ -107,5 +120,13 @@ class RelationCollection implements \Iterator, \ArrayAccess, \Countable
     {
         // $this->hydrate();
         return count($this->data); // $this->iterator()->count();
+    }
+    public function isConsumed() : bool
+    {
+        return $this->consumed;
+    }
+    public function isModified() : bool
+    {
+        return $this->modified;
     }
 }

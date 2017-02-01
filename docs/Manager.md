@@ -7,8 +7,6 @@ Manager ORM class
 |------|-------------|
 |[__construct](#vakata\orm\manager__construct)|Create an instance|
 |[addClass](#vakata\orm\manageraddclass)|Add a class by name and link it to a table|
-|[create](#vakata\orm\managercreate)|Create an instance|
-|[entity](#vakata\orm\managerentity)|Create an entity|
 |[save](#vakata\orm\managersave)|Persist an instance to DB|
 |[delete](#vakata\orm\managerdelete)|Remove an instance from DB|
 
@@ -43,7 +41,7 @@ Add a class by name and link it to a table
 public function addClass (  
     string $class,  
     string $table  
-) : self    
+) : $this    
 ```
 
 |  | Type | Description |
@@ -51,55 +49,7 @@ public function addClass (
 | `$class` | `string` | the class to create when reading from the table |
 | `$table` | `string` | the table name associated with the class |
 |  |  |  |
-| `return` | `self` |  |
-
----
-
-
-### vakata\orm\Manager::create
-Create an instance  
-
-
-```php
-public function create (  
-    string $search,  
-    array $data,  
-    \Table|null $definition  
-) : mixed    
-```
-
-|  | Type | Description |
-|-----|-----|-----|
-| `$search` | `string` | the type of instance to create (class name, table name, etc) |
-| `$data` | `array` | optional array of data to populate with (defaults to an empty array) |
-| `$definition` | `\Table`, `null` | optional explicit definition to use |
-|  |  |  |
-| `return` | `mixed` | the newly created instance |
-
----
-
-
-### vakata\orm\Manager::entity
-Create an entity  
-
-
-```php
-public function entity (  
-    string $class,  
-    array $key,  
-    array|null $data,  
-    \Table|null $definition  
-) : mixed    
-```
-
-|  | Type | Description |
-|-----|-----|-----|
-| `$class` | `string` | the class name |
-| `$key` | `array` | the ID of the entity |
-| `$data` | `array`, `null` | optional data to populate with, if missing it is gathered from DB |
-| `$definition` | `\Table`, `null` | optional explicit definition to use when creating the instance |
-|  |  |  |
-| `return` | `mixed` | the instance |
+| `return` | `$this` |  |
 
 ---
 

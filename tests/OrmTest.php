@@ -1,8 +1,22 @@
 <?php
 namespace vakata\orm\test;
 
-class Author extends \vakata\orm\Row
+class Author
 {
+    protected $data = [];
+
+    public function __construct(array $data = [])
+    {
+        $this->data = $data;
+    }
+    public function __get($key)
+    {
+        return $this->data[$key] ?? null;
+    }
+    public function __set($key, $value)
+    {
+        $this->data[$key] = $value;
+    }
 }
 
 class OrmTest extends \PHPUnit_Framework_TestCase
@@ -124,7 +138,7 @@ class OrmTest extends \PHPUnit_Framework_TestCase
         $tag = new \StdClass();
         $tag->id = null;
         $tag->name = 'TEST'; // $manager->create('tag', [ 'name' => 'TEST' ]);
-        $manager->save($tag, false, 'tag');
+        $manager->save($tag, 'tag');
         $this->assertEquals($manager->tag()[3]->name, 'TEST');
     }
     public function testUpdate() {
@@ -162,5 +176,24 @@ class OrmTest extends \PHPUnit_Framework_TestCase
         $author = $manager->author();
         self::$db->query('INSERT INTO book VALUES(NULL, ?, ?)', ['The Hitchhiker\'s Guide to the Galaxy', 42]);
         $this->assertEquals('The Hitchhiker\'s Guide to the Galaxy', $author[3]->book[0]->name);
+    }
+
+    public function testSaveChanges() {
+        $manager = new \vakata\orm\Manager(self::$db);
+        $book = new \StdClass();
+        $book->name = "Заглавие";
+        $book->tag = [ $manager->tag()[0] ];
+        $author = new Author();
+        $author->name = "Георги Иванов";
+        $author->book = [ $book ];
+        $manager->author()->add($author);
+        $manager->saveChanges();
+        $this->assertEquals('Георги Иванов', $manager->author()[3]->name);
+        $this->assertEquals('Заглавие', $manager->book()[1]->name);
+        $this->assertEquals('Discworld', $manager->book()[1]->tag[0]->name);
+        $this->assertEquals([1], self::$db->all("SELECT tag_id FROM book_tag WHERE book_id = ?", 3));
+        $manager->author()[3]->name = "asdf";
+        $manager->saveChanges();
+        $this->assertEquals('asdf', self::$db->one("SELECT name FROM author WHERE id = ?", 6));
     }
 }

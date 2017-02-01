@@ -19,6 +19,10 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
         $this->manager = $manager;
         $this->query = $query;
     }
+    public function __clone()
+    {
+        $this->reset();
+    }
     public function find($key)
     {
         if (!is_array($key)) {

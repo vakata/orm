@@ -6,7 +6,7 @@ return (object)[
     'classes' => [
         '\\vakata\\orm\\Manager',
         '\\vakata\\orm\\Collection',
-        '\\vakata\\orm\\Row',
+        '\\vakata\\orm\\RelationCollection',
         '\\vakata\\orm\\ORMException'
     ],
 ];

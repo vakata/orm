@@ -67,7 +67,7 @@ class Manager
         $inst = call_user_func($this->creator, $this->tableClassMap[$table->getName()] ?? \StdClass::class);
         $hash = [];
         foreach ($table->getColumns() as $column) {
-            $hash[$column] = $hash[$column] ?? null;
+            $hash[$column] = $data[$column] ?? null;
             $inst->{$column} = $data[$column] ?? null;
         }
         $hash = sha1(serialize($hash));
@@ -134,6 +134,9 @@ class Manager
         if (!$definition) {
             throw new ORMException('No definition');
         }
+        if (!isset($this->added[$table])) {
+            $this->added[$table] = [];
+        }
         if (array_search($entity, $this->added[$table], true) === false) {
             $this->added[$table][] = $entity;
         }
@@ -160,16 +163,18 @@ class Manager
         foreach ($table->getPrimaryKey() as $field) {
             $pkey[$field] = $entity->{$field} ?? null;
         }
+        if (!isset($this->added[$table])) {
+            $this->deleted[$table] = [];
+        }
         $this->deleted[$table][json_encode($pkey)] = $entity;
     }
 
     /**
      * Persist an instance to DB
      * @param  mixed $entity the instance object
-     * @param  bool  $readRelations should related entities be read and update local entity fields, default to false
      * @return array         the instance's primary key
      */
-    public function save($entity, bool $readRelations = false, string $table = null) : array
+    public function save($entity, string $table = null) : array
     {
         $old = null;
         if (!$table) {
@@ -193,7 +198,6 @@ class Manager
         foreach ($definition->getColumns() as $column) {
             $data[$column] = $entity->{$column} ?? null;
         }
-        $hash = sha1(serialize($data));
         // primary keys
         if (!isset($this->entities[$definition->getName()])) {
             $this->entities[$definition->getName()] = [];
@@ -207,16 +211,28 @@ class Manager
         }
         $new = [];
         foreach ($definition->getPrimaryKey() as $field) {
-            $new[$field] = $entity->{$field};
+            $new[$field] = $entity->{$field} ?? null;
         }
 
         // gather values from relations and set local fields
-        if ($readRelations) {
-            foreach ($definition->getRelations() as $name => $relation) {
-                if (count(array_diff(array_keys($relation->keymap), array_keys($new)))) {
-                    $obj = $entity->{$name}[0];
+        foreach ($definition->getRelations() as $name => $relation) {
+            if (count(array_diff(array_keys($relation->keymap), array_keys($new))) && ($entity->{$name} ?? null)) {
+                $obj = $entity->{$name};
+                $modified = false;
+                if ($obj instanceof RelationCollection) {
+                    $modified = $obj->isModified();
+                    if ($modified) {
+                        $obj = isset($obj[0]) ? $obj[0] : null;
+                    }
+                } else {
+                    $modified = true;
+                }
+                if ($modified) {
+                    if ($this->hasPrimaryKeyChanged($obj, $relation->table->getName())) {
+                        $this->save($obj, $relation->table->getName());
+                    }
                     foreach ($relation->keymap as $local => $remote) {
-                        $data[$local] = $obj->{$remote};
+                        $data[$local] = $obj ? $obj->{$remote} : null;
                     }
                 }
             }
@@ -240,18 +256,32 @@ class Manager
                 $this->entities[$definition->getName()][json_encode($new)] = $entity;
             }
         }
+        $data = [];
+        foreach ($definition->getColumns() as $column) {
+            $data[$column] = $entity->{$column} ?? null;
+        }
+        $hash = sha1(serialize($data));
         $this->hashes[$definition->getName()][json_encode($new)] = $hash;
 
         foreach ($definition->getRelations() as $name => $relation) {
-            if (!count(array_diff(array_keys($relation->keymap), array_keys($new)))) {
+            if (!count(array_diff(array_keys($relation->keymap), array_keys($new))) && ($entity->{$name} ?? null)) {
+                $obj = $entity->{$name};
                 if (!$relation->pivot) {
+                    $modified = !($obj instanceof RelationCollection) || $obj->isModified();
                     if ($old === false || json_encode($new) !== json_encode($old)) { // only on new ID
-                        if (is_array($entity->{$name}) || $entity->{$name} instanceof \Traversable) {
-                            foreach ($entity->{$name} as $obj) {
+                        $modified = true;
+                        if ($obj instanceof \Traversable || is_array($obj)) {
+                            foreach ($obj as $o) {
+                                foreach ($relation->keymap as $local => $remote) {
+                                    $o->{$remote} = $new[$local];
+                                }
+                            }
+                        } else if ($obj instanceof \StdClass) {
+                            try {
                                 foreach ($relation->keymap as $local => $remote) {
                                     $obj->{$remote} = $new[$local];
                                 }
-                            }
+                            } catch (\Exception $ignore) { }
                         }
                         if ($old !== false) {
                             $query = $this->schema->table($relation->table->getName());
@@ -263,8 +293,20 @@ class Manager
                             $query->update($data);
                         }
                     }
+                    if ($modified) {
+                        if ($obj instanceof \Traversable || is_array($obj)) {
+                            foreach ($obj as $o) {
+                                $this->save($o, $relation->table->getName());
+                            }
+                        } else if ($obj instanceof \StdClass) {
+                            try {
+                                $this->save($obj, $relation->table->getName());
+                            } catch (\Exception $ignore) { }
+                        }
+                    }
                 } else {
-                    if ($old !== false && json_encode($new) !== json_encode($old)) { // only on new ID
+                    // if the primary key is changed - update the pivot table
+                    if ($old !== false && json_encode($new) !== json_encode($old)) {
                         $query = $this->schema->table($relation->pivot->getName());
                         $data = [];
                         foreach ($relation->keymap as $local => $remote) {
@@ -273,24 +315,23 @@ class Manager
                         }
                         $query->update($data);
                     }
-                    /*
-                    $query = $this->schema->table($relation['pivot']->getName());
-                    $data = [];
-                    foreach ($relation['keymap'] as $local => $remote) {
-                        $query->filter($remote, $new[$local]);
-                        $data[$remote] = $new[$local];
-                    }
-                    $query->delete();
-                    if (is_array($entity->{$name}) || $entity->{$name} instanceof \Traversable) {
+                    // if the collection is modified - update pivot table
+                    if (!($obj instanceof RelationCollection) || $obj->isModified()) {
+                        $query = $this->schema->table($relation->pivot->getName());
+                        $data = [];
+                        foreach ($relation->keymap as $local => $remote) {
+                            $query->filter($remote, $new[$local]);
+                            $data[$remote] = $new[$local];
+                        }
+                        $query->delete();
                         foreach ($entity->{$name} as $obj) {
                             $query->reset();
-                            foreach ($relation['pivot_keymap'] as $local => $remote) {
+                            foreach ($relation->pivot_keymap as $local => $remote) {
                                 $data[$local] = $obj->{$remote};
                             }
                             $query->insert($data);
                         }
                     }
-                    */
                 }
             }
         }
@@ -381,13 +422,75 @@ class Manager
         return $res;
     }
 
+    protected function hasChanged($entity, string $table = null) : bool
+    {
+        if (!$table) {
+            $table = array_search(get_class($entity), $this->tableClassMap);
+            foreach ($this->entities as $t => $objects) {
+                if (($old = array_search($entity, $objects, true)) !== false) {
+                    $table = $t;
+                }
+            }
+            if (!$table) {
+                throw new ORMException('No table');
+            }
+        }
+        $definition = $this->schema->definition($table);
+        if (!$definition) {
+            throw new ORMException('No definition');
+        }
+        $pk = array_search($entity, $this->entities[$table], true);
+        $data = [];
+        foreach ($definition->getColumns() as $column) {
+            $data[$column] = $entity->{$column} ?? null;
+        }
+        return  $pk === false ||
+                !isset($this->hashes[$table]) ||
+                !isset($this->hashes[$table][$pk]) ||
+                sha1(serialize($data)) !== $this->hashes[$table][$pk];
+    }
+    protected function hasPrimaryKeyChanged($entity, string $table = null) : bool
+    {
+        if (!$table) {
+            $table = array_search(get_class($entity), $this->tableClassMap);
+            foreach ($this->entities as $t => $objects) {
+                if (array_search($entity, $objects, true) !== false) {
+                    $table = $t;
+                    break;
+                }
+            }
+            if (!$table) {
+                throw new ORMException('No table');
+            }
+        }
+        $definition = $this->schema->definition($table);
+        if (!$definition) {
+            throw new ORMException('No definition');
+        }
+        $old = array_search($entity, $this->entities[$table], true);
+        $pk = [];
+        foreach ($definition->getPrimaryKey() as $field) {
+            $pk[$field] = $entity->{$field};
+        }
+        return $old === false || json_encode($pk) !== $old;
+    }
+
     public function saveChanges()
     {
         $this->schema->begin();
         try {
             foreach ($this->added as $table => $objects) {
                 foreach ($objects as $instance) {
-                    $this->save($instance, false, $table);
+                    $this->save($instance, $table);
+                }
+            }
+            $this->added = [];
+            foreach ($this->entities as $table => $objects) {
+                $definition = $this->schema->definition($table);
+                foreach ($objects as $pk => $instance) {
+                    if ($this->hasChanged($instance, $table)) {
+                        $this->save($instance, $table);
+                    }
                 }
             }
             foreach ($this->deleted as $table => $objects) {
@@ -396,21 +499,10 @@ class Manager
                         unset($this->entities[$table][$pk]);
                         unset($this->hashes[$table][$pk]);
                     }
-                    $this->delete($instance, false, $table);
+                    $this->delete($instance, $table);
                 }
             }
-            foreach ($this->entities as $table => $objects) {
-                $definition = $this->schema->definition($table);
-                foreach ($objects as $pk => $instance) {
-                    $data = [];
-                    foreach ($definition->getColumns() as $column) {
-                        $data[$column] = $entity->{$column} ?? null;
-                    }
-                    if (sha1(serialize($data)) !== $this->hashes[$table][$pk]) {
-                        $this->save($instance, false, $table);
-                    }
-                }
-            }
+            $this->deleted = [];
             $this->schema->commit();
         } catch (\Exception $e) {
             $this->schema->rollback();
