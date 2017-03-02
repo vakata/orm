@@ -53,6 +53,16 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
         $this->query->paginate($page, $perPage);
         return $this;
     }
+    public function where(string $sql, array $params = [])
+    {
+        $this->query->where($sql, $params);
+        return $this;
+    }
+    public function order(string $sql, array $params = [])
+    {
+        $this->query->order($sql, $params);
+        return $this;
+    }
     public function limit(int $limit, int $offset = 0)
     {
         $this->query->limit($limit, $offset);
