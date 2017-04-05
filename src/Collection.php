@@ -1,7 +1,7 @@
 <?php
 namespace vakata\orm;
 
-use \vakata\database\TableQuery;
+use \vakata\database\schema\TableQuery;
 
 class Collection implements \Iterator, \ArrayAccess, \Countable
 {

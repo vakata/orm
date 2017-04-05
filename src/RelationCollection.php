@@ -1,9 +1,8 @@
 <?php
 namespace vakata\orm;
 
-use \vakata\database\DatabaseInterface;
-use \vakata\database\TableQuery;
-use \vakata\database\TableQueryIterator;
+use \vakata\database\schema\TableQuery;
+use \vakata\database\schema\TableQueryIterator;
 
 class RelationCollection implements \Iterator, \ArrayAccess, \Countable
 {

@@ -2,11 +2,11 @@
 
 namespace vakata\orm;
 
-use vakata\database\DatabaseException;
+use vakata\database\DBException;
 
 /**
  * The ORM exception class
  */
-class ORMException extends DatabaseException
+class ORMException extends DBException
 {
 }

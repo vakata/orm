@@ -1,8 +1,8 @@
 <?php
 namespace vakata\orm;
 
-use \vakata\database\DatabaseInterface;
-use \vakata\database\Table;
+use \vakata\database\DBInterface;
+use \vakata\database\schema\Table;
 
 /**
  * Manager ORM class
@@ -19,10 +19,10 @@ class Manager
 
     /**
      * Create an instance
-     * @param  Schema            $schema  the database schema
+     * @param  DBInterface       $schema  the database schema
      * @param  callable|null     $creator optional function used to create all necessary classes
      */
-    public function __construct(DatabaseInterface $schema, callable $creator = null)
+    public function __construct(DBInterface $schema, callable $creator = null)
     {
         $this->schema = $schema;
         $this->creator = $creator !== null ?
