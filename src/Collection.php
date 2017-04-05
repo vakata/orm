@@ -73,12 +73,12 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
         return $this->query->count();
     }
     public function reset() {
-        $this->query->reset();
+        $this->query->getIterator()->reset();
         return $this;
     }
     public function current()
     {
-        if(!($data = $this->query->current())) {
+        if(!($data = $this->query->getIterator()->current())) {
             return null;
         }
         return $this->manager->instance($this->query->getDefinition()->getName(), $data);
@@ -113,19 +113,19 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
 
     public function key()
     {
-        return $this->query->key();
+        return $this->query->getIterator()->key();
     }
     public function rewind()
     {
-        return $this->query->rewind();
+        return $this->query->getIterator()->rewind();
     }
     public function next()
     {
-        return $this->query->next();
+        return $this->query->getIterator()->next();
     }
     public function valid()
     {
-        return $this->query->valid();
+        return $this->query->getIterator()->valid();
     }
     public function offsetExists($offset)
     {

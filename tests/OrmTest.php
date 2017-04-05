@@ -58,8 +58,15 @@ class OrmTest extends \PHPUnit_Framework_TestCase
         $manager = new \vakata\orm\Manager(self::$db);
 
         $books = $manager->book();
+        foreach ($books as $book) {
+            $this->assertEquals($book->name, 'Equal rites');
+        }
         $this->assertEquals(count($books), 1);
         $this->assertEquals($books[0]->name, 'Equal rites');
+        iterator_to_array($books);
+        foreach ($books as $book) {
+            $this->assertEquals($book->name, 'Equal rites');
+        }
     }
     public function testRelations() {
         $manager = new \vakata\orm\Manager(self::$db);
