@@ -11,6 +11,8 @@ class Manager
 {
     protected $schema;
     protected $creator;
+    protected $extractor;
+    
     protected $tableClassMap = [];
     protected $entities = [];
     protected $hashes = [];
@@ -22,14 +24,11 @@ class Manager
      * @param  DBInterface       $schema  the database schema
      * @param  callable|null     $creator optional function used to create all necessary classes
      */
-    public function __construct(DBInterface $schema, callable $creator = null)
+    public function __construct(DBInterface $schema, callable $creator = null, callable $extractor = null)
     {
         $this->schema = $schema;
-        $this->creator = $creator !== null ?
-            $creator :
-            function ($class) {
-                return new $class();
-            };
+        $this->creator = $creator;
+        $this->extractor = $extractor;
     }
     /**
      * Add a class by name and link it to a table
@@ -44,10 +43,15 @@ class Manager
     }
     public function __call(string $table, array $args)
     {
-        $collection = new Collection($this, $this->schema->{$table}());
+        $collection = $this->collection($table);
         return !count($args) ?
             $collection :
             $collection->find($args[0]);
+    }
+    public function collection(string $table, string $className = null)
+    {
+        $className = $className ?? $this->tableClassMap[$className] ?? \StdClass::class;
+        return new Collection($this->schema, $table, $this, $className);
     }
 
     public function instance(string $tableName, array $data)
