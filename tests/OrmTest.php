@@ -72,16 +72,17 @@ class OrmTest extends \PHPUnit_Framework_TestCase
         $manager = new \vakata\orm\Manager(self::$db);
 
         $books = $manager->book();
-        $this->assertEquals('Terry Pratchett', $books[0]->author[0]->name);
+        $this->assertEquals('Terry Pratchett', $books[0]->author->name);
         $this->assertEquals(2, count($books[0]->tag));
-        $this->assertEquals('Terry Pratchett', $books[0]->author[0]->book[0]->tag[0]->book[0]->author[0]->name);
+        $this->assertEquals('Terry Pratchett', $books[0]->author->book[0]->tag[0]->book[0]->author->name);
     }
 
     public function testRelationsWith() {
         $manager = new \vakata\orm\Manager(self::$db);
 
-        $books = $manager->book()->with('author');
-        $this->assertEquals($books[0]->author[0]->name, 'Terry Pratchett');
+        $books = $manager->fromQuery(self::$db->table('book')->with('author'));
+        $this->assertEquals($books[0]->author->name, 'Terry Pratchett');
+        $this->assertEquals(count($books[0]->tag), 2);
     }
 
     public function testFilter() {
@@ -127,42 +128,37 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 
     public function testCreate() {
         $manager = new \vakata\orm\Manager(self::$db);
-        $manager->addClass(Author::CLASS, 'author');
+        $manager->registerGenericMapperWithClassName('author', Author::CLASS);
 
         $author = $manager->author();
 
         $resig = new Author();
         $resig->name = 'John Resig';
-        $manager->save($resig);
+        $author->add($resig);
 
         $this->assertEquals($author[4]->name, 'John Resig');
         $this->assertEquals(self::$db->one('SELECT name FROM author WHERE id = 5'), 'John Resig');
         $this->assertEquals($author[0]->book[0]->name, 'Equal rites');
         $this->assertEquals($author[0]->book[0]->tag[1]->name, 'Escarina');
     }
-    public function testManagerCreate() {
-        $manager = new \vakata\orm\Manager(self::$db);
-        $tag = new \StdClass();
-        $tag->id = null;
-        $tag->name = 'TEST'; // $manager->create('tag', [ 'name' => 'TEST' ]);
-        $manager->save($tag, 'tag');
-        $this->assertEquals($manager->tag()[3]->name, 'TEST');
-    }
     public function testUpdate() {
         $manager = new \vakata\orm\Manager(self::$db);
         $author = $manager->author();
         $author[0]->name = 'Terry Pratchett, Sir';
-        $manager->save($author[0]);
+        $manager->getMapper('author')->update($author[0]);
         $this->assertEquals($manager->author()[0]->name, 'Terry Pratchett, Sir');
         $this->assertEquals(self::$db->one('SELECT name FROM author WHERE id = 1'), 'Terry Pratchett, Sir');
     }
     public function testDelete() {
         $manager = new \vakata\orm\Manager(self::$db);
         $author = $manager->author();
-        $manager->delete($author[4]);
+        $author->remove($author[4]);
         $this->assertEquals(count($manager->author()), 4);
         $this->assertEquals(self::$db->one('SELECT COUNT(id) FROM author'), 4);
-        $manager->delete($manager->book()[0]);
+        $books = $manager->book();
+        $this->assertEquals($books[0]->author->name, 'Terry Pratchett, Sir');
+        $this->assertEquals(count($books[0]->tag), 2);
+        $manager->book()->remove($manager->book()[0]);
         $this->assertEquals(count($manager->book()), 0);
         $this->assertEquals(count($author[0]->book), 0);
         $this->assertEquals(self::$db->one('SELECT COUNT(id) FROM book'), 0);
@@ -174,7 +170,7 @@ class OrmTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($author[2]->name, 'Douglas Adams');
         $this->assertEquals($author[2]->id, 3);
         $author[2]->id = 42;
-        $manager->save($author[2]);
+        $manager->getMapper('author')->update($author[2]);
         $this->assertEquals('Douglas Adams', $manager->author()[3]->name);
         $this->assertEquals(42, $manager->author()[3]->id);
     }
@@ -185,22 +181,25 @@ class OrmTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('The Hitchhiker\'s Guide to the Galaxy', $author[3]->book[0]->name);
     }
 
-    public function testSaveChanges() {
-        $manager = new \vakata\orm\Manager(self::$db);
+    public function testUoW() {
+        $manager = new \vakata\orm\UnitOfWorkManager(self::$db, new \vakata\orm\UnitOfWork(self::$db));
         $book = new \StdClass();
         $book->name = "Заглавие";
         $book->tag = [ $manager->tag()[0] ];
         $author = new Author();
         $author->name = "Георги Иванов";
         $author->book = [ $book ];
+        $book->author = $author;
+        $manager->book()->add($book);
         $manager->author()->add($author);
-        $manager->saveChanges();
+        $manager->save();
         $this->assertEquals('Георги Иванов', $manager->author()[3]->name);
+        $this->assertEquals('Георги Иванов', $manager->book()[1]->author->name);
         $this->assertEquals('Заглавие', $manager->book()[1]->name);
         $this->assertEquals('Discworld', $manager->book()[1]->tag[0]->name);
         $this->assertEquals([1], self::$db->all("SELECT tag_id FROM book_tag WHERE book_id = ?", 3));
         $manager->author()[3]->name = "asdf";
-        $manager->saveChanges();
+        $manager->save();
         $this->assertEquals('asdf', self::$db->one("SELECT name FROM author WHERE id = ?", 6));
     }
 }
