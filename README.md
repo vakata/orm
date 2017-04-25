@@ -20,12 +20,10 @@ $ composer require vakata/orm
 
 ``` php
 // first you need a database instance
-$db = new \vakata\database\DB('mysqli://root@127.0.0.1/test');
-// then a schema
-$schema = new \vakata\database\Schema($db);
+$db = new \vakata\database\DB('mysql://root@127.0.0.1/test');
 
 // then you can create the manager object
-$manager = new \vakata\orm\Manager($schema);
+$manager = new \vakata\orm\Manager($db);
 
 // assuming there is a book table with a name column
 foreach ($manager->book() as $book) {
@@ -39,12 +37,12 @@ foreach ($manager->book()->filter('year', 2016)->sort('name') as $book) {
 // if using mySQL foreign keys are automatically detected
 // for example if there is an author table and the book table references it
 foreach ($manager->book() as $book) {
-    echo $book->author->get()->name . "\n";
+    echo $book->author->name . "\n";
 }
 
 // you can solve the n+1 queries problem like this
-foreach ($manager->book()->with('author') as $book) {
-    echo $book->author->get()->name . "\n";
+foreach ($manager->fromQuery($db->book()->with('author')) as $book) {
+    echo $book->author->name . "\n";
 }
 
 // provided there is a linking table book_tag and a tag table and each book has many tags you can do this
@@ -53,20 +51,17 @@ foreach ($manager->book()->with('author') as $book) {
 }
 
 // which means you can do something like this
-echo $manager->book()[0]->author->get()->book[0]->tag[0]->book[0]->author->get()->name;
+echo $manager->book()[0]->author->book[0]->tag[0]->book[0]->author->name;
 
-// filtering and ordering works on relations too
-$manager->book()->filter('author.name', 'A. Name');
-
-// as for changing objects
-$author = $manager->author()[0];
-$author->name = 'New name';
-$manager->save($author);
+// as for removing objects
+$authors = $manager->author();
+$author = $authors[0];
+$authors->remove($author);
 
 // you can also create new objects
-$book = $manager->create('book');
+$book = new \StdClass();
 $book->name = 'Test';
-$manager->save($book);
+$manager->books()->add($book);
 
 // you can also use your own classes
 // just make sure you provide getters and setters for all table columns and relations
@@ -76,8 +71,28 @@ class Author
     public function __get($key) { return $this->data[$key] ?? null; }
     public function __set($key, $value) { $this->data[$key] = $value; }
 }
-$manager->addClass(Author::CLASS, 'author');
+$manager->registerGenericMapperWithClassName('author', Author::class); // you can also add custom mappers (check the docs)
 $author = $manager->author()[0]; // this is an Author instance
+
+// as for changing objects
+// one way is to do it manually
+$authors = $manager->author();
+$author = $authors[0];
+$author->name = "Test";
+$manager->getMapper('author')->update($author);
+
+// or use the unit of work manager and have all changes automatically saved
+$manager = new \vakata\orm\UnitOfWorkManager($db, new \vakata\orm\UnitOfWork($db));
+$book = new Book();
+$book->name = "Book name";
+$book->author = $manager->author()->find(1);
+$tag = new Tag('tag');
+$book->tags = $tag;
+$book->author->name = "Changed name";
+$manager->books()->add($book);
+$manager->tags()->add($tag);
+// all you need to do is call this line
+$manager->save();
 ```
 
 Read more in the [API docs](docs/README.md)
