@@ -1,4 +1,4 @@
-# vakata\orm\Collection
+# vakata\orm\Repository
 
 
 ## Methods

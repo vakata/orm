@@ -5,8 +5,12 @@ return (object)[
     'format' => 'github',
     'classes' => [
         '\\vakata\\orm\\Manager',
-        '\\vakata\\orm\\Collection',
-        '\\vakata\\orm\\RelationCollection',
-        '\\vakata\\orm\\ORMException'
+        '\\vakata\\orm\\Repository',
+        '\\vakata\\orm\\DataMapper',
+        '\\vakata\\orm\\DatabaseRepository',
+        '\\vakata\\orm\\GenericDataMapper',
+        '\\vakata\\orm\\UnitOfWork',
+        '\\vakata\\orm\\UnitOfWorkManager',
+        '\\vakata\\orm\\UnitOfWorkRepository'
     ],
 ];

@@ -6,9 +6,13 @@ Manager ORM class
 | Name | Description |
 |------|-------------|
 |[__construct](#vakata\orm\manager__construct)|Create an instance|
-|[addClass](#vakata\orm\manageraddclass)|Add a class by name and link it to a table|
-|[save](#vakata\orm\managersave)|Persist an instance to DB|
-|[delete](#vakata\orm\managerdelete)|Remove an instance from DB|
+|[registerMapper](#vakata\orm\managerregistermapper)|Add a mapper for a specific table|
+|[registerGenericMapper](#vakata\orm\managerregistergenericmapper)|Add a generic mapper for a table name|
+|[registerGenericMapperWithClassName](#vakata\orm\managerregistergenericmapperwithclassname)|Add a generic mapper for a table name using a class name|
+|[hasMapper](#vakata\orm\managerhasmapper)|Is a mapper available for a given table name|
+|[getMapper](#vakata\orm\managergetmapper)|Get a mapper for a table name, if a mapper is not found a new generic mapper is registered using \StdClass|
+|[fromQuery](#vakata\orm\managerfromquery)|Get a repository from a table query|
+|[fromTable](#vakata\orm\managerfromtable)|Get a repository for a given table name|
 
 ---
 
@@ -20,74 +24,152 @@ Create an instance
 
 ```php
 public function __construct (  
-    \Schema $schema,  
-    callable|null $creator  
+    \DBInterface $db  
 )   
 ```
 
 |  | Type | Description |
 |-----|-----|-----|
-| `$schema` | `\Schema` | the database schema |
-| `$creator` | `callable`, `null` | optional function used to create all necessary classes |
+| `$db` | `\DBInterface` | the database schema |
 
 ---
 
 
-### vakata\orm\Manager::addClass
-Add a class by name and link it to a table  
+### vakata\orm\Manager::registerMapper
+Add a mapper for a specific table  
 
 
 ```php
-public function addClass (  
-    string $class,  
-    string $table  
+public function registerMapper (  
+    string $table,  
+    \DataMapper $mapper  
 ) : $this    
 ```
 
 |  | Type | Description |
 |-----|-----|-----|
-| `$class` | `string` | the class to create when reading from the table |
-| `$table` | `string` | the table name associated with the class |
+| `$table` | `string` | the table name |
+| `$mapper` | `\DataMapper` | the mapper instance |
 |  |  |  |
 | `return` | `$this` |  |
 
 ---
 
 
-### vakata\orm\Manager::save
-Persist an instance to DB  
+### vakata\orm\Manager::registerGenericMapper
+Add a generic mapper for a table name  
 
 
 ```php
-public function save (  
-    mixed $entity  
-) : array    
+public function registerGenericMapper (  
+    string $table,  
+    callable $creator  
+) : $this    
 ```
 
 |  | Type | Description |
 |-----|-----|-----|
-| `$entity` | `mixed` | the instance object |
+| `$table` | `string` | the table name |
+| `$creator` | `callable` | a callable to invoke when a new instance is needed |
 |  |  |  |
-| `return` | `array` | the instance's primary key |
+| `return` | `$this` |  |
 
 ---
 
 
-### vakata\orm\Manager::delete
-Remove an instance from DB  
+### vakata\orm\Manager::registerGenericMapperWithClassName
+Add a generic mapper for a table name using a class name  
 
 
 ```php
-public function delete (  
-    mixed $entity  
-) : int    
+public function registerGenericMapperWithClassName (  
+    string $table,  
+    string $class  
+) : $this    
 ```
 
 |  | Type | Description |
 |-----|-----|-----|
-| `$entity` | `mixed` | the instance to remove |
+| `$table` | `string` | the table name |
+| `$class` | `string` | the class name to use when creating new instances |
 |  |  |  |
-| `return` | `int` | the deleted rows count |
+| `return` | `$this` |  |
+
+---
+
+
+### vakata\orm\Manager::hasMapper
+Is a mapper available for a given table name  
+
+
+```php
+public function hasMapper (  
+    string $table  
+) : boolean    
+```
+
+|  | Type | Description |
+|-----|-----|-----|
+| `$table` | `string` | the table name |
+|  |  |  |
+| `return` | `boolean` |  |
+
+---
+
+
+### vakata\orm\Manager::getMapper
+Get a mapper for a table name, if a mapper is not found a new generic mapper is registered using \StdClass  
+
+
+```php
+public function getMapper (  
+    string $table  
+) : \DataMapper    
+```
+
+|  | Type | Description |
+|-----|-----|-----|
+| `$table` | `string` |  |
+|  |  |  |
+| `return` | `\DataMapper` |  |
+
+---
+
+
+### vakata\orm\Manager::fromQuery
+Get a repository from a table query  
+
+
+```php
+public function fromQuery (  
+    \TableQuery $query  
+) : \Repository    
+```
+
+|  | Type | Description |
+|-----|-----|-----|
+| `$query` | `\TableQuery` |  |
+|  |  |  |
+| `return` | `\Repository` |  |
+
+---
+
+
+### vakata\orm\Manager::fromTable
+Get a repository for a given table name  
+
+
+```php
+public function fromTable (  
+    string $table  
+) : \Repository    
+```
+
+|  | Type | Description |
+|-----|-----|-----|
+| `$table` | `string` |  |
+|  |  |  |
+| `return` | `\Repository` |  |
 
 ---
 

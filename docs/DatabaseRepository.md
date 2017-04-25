@@ -1,4 +1,4 @@
-# vakata\orm\RelationCollection
+# vakata\orm\DatabaseRepository
 
 
 ## Methods
