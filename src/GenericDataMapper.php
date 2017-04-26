@@ -334,7 +334,7 @@ class GenericDataMapper implements DataMapper
      * @param mixed $entity
      * @return int the number of affected rows
      */
-    public function update($entity) : int
+    public function update($entity) : array
     {
         // get the current primary key
         $hash = array_search($entity, $this->map, true);
@@ -358,7 +358,7 @@ class GenericDataMapper implements DataMapper
             $this->updateRelations($entity, json_decode($newHash, true));
         }
         $this->updatePivots($entity, json_decode($newHash, true), $hash !== $newHash);
-        return $updatedCount;
+        return json_decode($newHash, true);
     }
     /**
      * Delete an entity
@@ -366,7 +366,7 @@ class GenericDataMapper implements DataMapper
      * @param mixed $entity
      * @return int the number of deleted rows
      */
-    public function delete($entity) : int
+    public function delete($entity) : array
     {
         // get current primary key
         $hash = array_search($entity, $this->map, true);
@@ -384,6 +384,6 @@ class GenericDataMapper implements DataMapper
         unset($this->map[$hash]);
         // delete data in related tables (probably not needed with cascade FK)
         $this->deleteRelations($entity, $pkey);
-        return $deletedCount;
+        return $pkey;
     }
 }

@@ -21,16 +21,16 @@ interface DataMapper
      * Update an entity
      *
      * @param mixed $entity
-     * @return int the number of affected rows
+     * @return array a key value map of the primary key columns
      */
-    public function update($entity) : int;
+    public function update($entity) : array;
     /**
      * Delete an entity
      *
      * @param mixed $entity
-     * @return int the number of deleted rows
+     * @return array a key value map of the primary key columns
      */
-    public function delete($entity) : int;
+    public function delete($entity) : array;
     /**
      * Convert an entity to an array of fields, optionally including relation fields. 
      *
