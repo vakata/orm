@@ -60,14 +60,14 @@ Update an entity
 ```php
 public function update (  
     mixed $entity  
-) : int    
+) : array    
 ```
 
 |  | Type | Description |
 |-----|-----|-----|
 | `$entity` | `mixed` |  |
 |  |  |  |
-| `return` | `int` | the number of affected rows |
+| `return` | `array` | a key value map of the primary key columns |
 
 ---
 
@@ -79,14 +79,14 @@ Delete an entity
 ```php
 public function delete (  
     mixed $entity  
-) : int    
+) : array    
 ```
 
 |  | Type | Description |
 |-----|-----|-----|
 | `$entity` | `mixed` |  |
 |  |  |  |
-| `return` | `int` | the number of deleted rows |
+| `return` | `array` | a key value map of the primary key columns |
 
 ---
 
