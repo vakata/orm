@@ -1,7 +1,7 @@
 <?php
 namespace vakata\orm;
 
-class UnitOfWorkRepository implements Repository
+class UnitOfWorkRepository implements SearchableRepository
 {
     protected $uow;
     protected $repository;
@@ -109,5 +109,12 @@ class UnitOfWorkRepository implements Repository
     public function isModified() : bool
     {
         return $this->modified;
+    }
+    public function search(string $q) : SearchableRepository
+    {
+        if (!($this->repository instanceof SearchableRepository)) {
+            throw new \BadMethodCallException();
+        }
+        return $this->repository->search($q);
     }
 }
