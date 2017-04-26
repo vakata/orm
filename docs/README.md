@@ -2,6 +2,7 @@
 
 * [vakata\orm\Manager](Manager.md) 
 * [vakata\orm\Repository](Repository.md) 
+* [vakata\orm\SearchableRepository](SearchableRepository.md) 
 * [vakata\orm\DataMapper](DataMapper.md) 
 * [vakata\orm\DatabaseRepository](DatabaseRepository.md) 
 * [vakata\orm\GenericDataMapper](GenericDataMapper.md) 

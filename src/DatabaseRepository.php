@@ -3,7 +3,7 @@ namespace vakata\orm;
 
 use \vakata\database\schema\TableQuery;
 
-class DatabaseRepository implements Repository
+class DatabaseRepository implements SearchableRepository
 {
     /**
      * @var DataMapper
@@ -138,5 +138,24 @@ class DatabaseRepository implements Repository
     public function isModified() : bool
     {
         return $this->modified;
+    }
+
+    public function search(string $q) : SearchableRepository
+    {
+        $sql = [];
+        $par = [];
+        $table = $this->query->getDefinition()->getName();
+        foreach ($this->query->getDefinition()->getFullColumns() as $name => $column) {
+            if ($column->getBasicType() === 'text') {
+                $sql[] = $table . '.' . $name . ' = ?';
+                $par[] = $q;
+                $sql[] = $table . '.' . $name . ' LIKE ?';
+                $par[] = '%' . str_replace(['%', '_'], ['\\%','\\_'], $q) . '%';
+            }
+        }
+        if (count($sql)) {
+            $this->query->where("(".implode(" OR ", $sql).")", $par);
+        }
+        return $this;
     }
 }

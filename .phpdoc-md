@@ -6,6 +6,7 @@ return (object)[
     'classes' => [
         '\\vakata\\orm\\Manager',
         '\\vakata\\orm\\Repository',
+        '\\vakata\\orm\\SearchableRepository',
         '\\vakata\\orm\\DataMapper',
         '\\vakata\\orm\\DatabaseRepository',
         '\\vakata\\orm\\GenericDataMapper',
