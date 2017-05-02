@@ -58,7 +58,7 @@ class GenericDataMapper implements DataMapper
                 if (method_exists($entity, $method)) {
                     $entity->{$method}($value);
                 } else {
-                    $entity->{$field} = $value;
+                    $entity->{$field} = $value ?? null;
                 }
             } catch (\Exception $ignore) {}
         }
@@ -129,7 +129,7 @@ class GenericDataMapper implements DataMapper
                 $data[$column] = $entity->{$method}();
             } else {
                 try {
-                    $data[$column] = $entity->{$column};
+                    $data[$column] = $entity->{$column} ?? null;
                 } catch (\Exception $ignore) {}
             }
         }
@@ -145,7 +145,7 @@ class GenericDataMapper implements DataMapper
                     $value = $entity->{$method}();
                 } else {
                     try {
-                        $value = $entity->{$name};
+                        $value = $entity->{$name} ?? null;
                     } catch (\Exception $ignore) {
                         continue;
                     }
@@ -160,7 +160,7 @@ class GenericDataMapper implements DataMapper
                                 $data[$local] = $value->{$method}();
                             } else {
                                 try {
-                                    $data[$local] = $value->{$remote};
+                                    $data[$local] = $value->{$remote} ?? null;
                                 } catch (\Exception $ignore) {}
                             }
                         }
@@ -208,7 +208,7 @@ class GenericDataMapper implements DataMapper
                     $data = $entity->{$method}();
                 } else {
                     try {
-                        $data = $entity->{$name};
+                        $data = $entity->{$name} ?? null;
                     } catch (\Exception $e) {}
                 }
                 if (!isset($data)) {
@@ -223,7 +223,7 @@ class GenericDataMapper implements DataMapper
                                 if (method_exists($item, $method)) {
                                     $item->{$method}($pkey[$local]);
                                 } else {
-                                    $item->{$remote} = $pkey[$local];
+                                    $item->{$remote} = $pkey[$local] ?? null;
                                 }
                             } catch (\Exception $ignore) {}
                         }
@@ -244,7 +244,7 @@ class GenericDataMapper implements DataMapper
                 $data = $entity->{$method}();
             } else {
                 try {
-                    $data = $entity->{$name};
+                    $data = $entity->{$name} ?? null;
                 } catch (\Exception $e) {}
             }
             if (!isset($data)) {
@@ -269,7 +269,7 @@ class GenericDataMapper implements DataMapper
                             $insert[$local] = $item->{$method}();
                         } else {
                             try {
-                                $insert[$local] = $item->{$remote};
+                                $insert[$local] = $item->{$remote} ?? null;
                             } catch (\Exception $e) {}
                         }
                     }
@@ -295,7 +295,7 @@ class GenericDataMapper implements DataMapper
                         $data = $entity->{$method}();
                     } else {
                         try {
-                            $data = $entity->{$name};
+                            $data = $entity->{$name} ?? null;
                         } catch (\Exception $ignore) {}
                     }
                     if (!isset($data)) {
