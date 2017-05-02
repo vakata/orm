@@ -181,10 +181,12 @@ class GenericDataMapper implements DataMapper
         $entity = $this->instance($row);
         // populate basic fields
         $this->populate($entity, $row);
+        // save in map (before fetching relations as some relations may be circular)
+        $this->map[$hash] = $entity;
         // populate relations
         $this->populateRelations($entity, $row);
-        // return entity (and save in map)
-        return $this->map[$hash] = $entity;
+        // return entity
+        return $entity;
     }
 
     // WRITE METHODS
