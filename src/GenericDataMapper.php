@@ -58,7 +58,7 @@ class GenericDataMapper implements DataMapper
                 if (method_exists($entity, $method)) {
                     $entity->{$method}($value);
                 } else {
-                    $entity->{$field} = $value ?? null;
+                    $entity->{$field} = $value;
                 }
             } catch (\Exception $ignore) {}
         }
@@ -127,11 +127,9 @@ class GenericDataMapper implements DataMapper
             $method = 'get' . ucfirst(strtolower($column));
             if (method_exists($entity, $method)) {
                 $data[$column] = $entity->{$method}();
-            } else {
-                try {
-                    $data[$column] = $entity->{$column} ?? null;
-                } catch (\Exception $ignore) {}
-            }
+            } else if (property_exists($entity, $column) || method_exists($entity, '__get')) {
+                $data[$column] = $entity->{$column};
+             }
         }
         // gather data from relations
         if ($relations) {
@@ -143,12 +141,10 @@ class GenericDataMapper implements DataMapper
                 $method = 'get' . ucfirst(strtolower($name));
                 if (method_exists($entity, $method)) {
                     $value = $entity->{$method}();
+                } else if (property_exists($entity, $name) || method_exists($entity, '__get')) {
+                    $value = $entity->{$name};
                 } else {
-                    try {
-                        $value = $entity->{$name} ?? null;
-                    } catch (\Exception $ignore) {
-                        continue;
-                    }
+                    continue;
                 }
                 $pkfields = $this->definition->getPrimaryKey();
                 foreach ($relation->keymap as $local => $remote) {
@@ -158,10 +154,8 @@ class GenericDataMapper implements DataMapper
                         if (is_object($value)) {
                             if (method_exists($value, $method)) {
                                 $data[$local] = $value->{$method}();
-                            } else {
-                                try {
-                                    $data[$local] = $value->{$remote} ?? null;
-                                } catch (\Exception $ignore) {}
+                            } else if (property_exists($value, $remote) || method_exists($value, '__get')) {
+                                $data[$local] = $value->{$remote};
                             }
                         }
                     }
@@ -206,10 +200,10 @@ class GenericDataMapper implements DataMapper
                 $method = 'get' . ucfirst(strtolower($name));
                 if (method_exists($entity, $method)) {
                     $data = $entity->{$method}();
+                } else if (property_exists($entity, $name) || method_exists($entity, '__get')) {
+                    $data = $entity->{$name};
                 } else {
-                    try {
-                        $data = $entity->{$name} ?? null;
-                    } catch (\Exception $e) {}
+                    continue;
                 }
                 if (!isset($data)) {
                     continue;
@@ -223,7 +217,7 @@ class GenericDataMapper implements DataMapper
                                 if (method_exists($item, $method)) {
                                     $item->{$method}($pkey[$local]);
                                 } else {
-                                    $item->{$remote} = $pkey[$local] ?? null;
+                                    $item->{$remote} = $pkey[$local];
                                 }
                             } catch (\Exception $ignore) {}
                         }
@@ -242,10 +236,10 @@ class GenericDataMapper implements DataMapper
             $method = 'get' . ucfirst(strtolower($name));
             if (method_exists($entity, $method)) {
                 $data = $entity->{$method}();
+            } else if (property_exists($entity, $name) || method_exists($entity, '__get')) {
+                $data = $entity->{$name};
             } else {
-                try {
-                    $data = $entity->{$name} ?? null;
-                } catch (\Exception $e) {}
+                continue;
             }
             if (!isset($data)) {
                 continue;
@@ -267,10 +261,8 @@ class GenericDataMapper implements DataMapper
                         $method = 'get' . ucfirst(strtolower($remote));
                         if (method_exists($item, $method)) {
                             $insert[$local] = $item->{$method}();
-                        } else {
-                            try {
-                                $insert[$local] = $item->{$remote} ?? null;
-                            } catch (\Exception $e) {}
+                        } else if (property_exists($item, $remote) || method_exists($item, '__get')) {
+                            $insert[$local] = $item->{$remote};
                         }
                     }
                     $query->insert($insert);
@@ -293,10 +285,10 @@ class GenericDataMapper implements DataMapper
                     $method = 'get' . ucfirst(strtolower($name));
                     if (method_exists($entity, $method)) {
                         $data = $entity->{$method}();
+                    } else if (property_exists($entity, $name) || method_exists($entity, '__get')) {
+                        $data = $entity->{$name};
                     } else {
-                        try {
-                            $data = $entity->{$name} ?? null;
-                        } catch (\Exception $ignore) {}
+                        continue;
                     }
                     if (!isset($data)) {
                         continue;
