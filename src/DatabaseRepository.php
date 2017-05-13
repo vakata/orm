@@ -46,6 +46,11 @@ class DatabaseRepository implements SearchableRepository
         $this->query->filter($column, $value);
         return $this;
     }
+    public function reject(string $column, $value) : Repository
+    {
+        $this->query->filter($column, $value, true);
+        return $this;
+    }
     public function sort(string $column, bool $desc = false) : Repository
     {
         $this->query->sort($column, $desc);

@@ -21,6 +21,11 @@ class UnitOfWorkRepository implements SearchableRepository
         $this->repository->filter($column, $value);
         return $this;
     }
+    public function reject(string $column, $value) : Repository
+    {
+        $this->repository->reject($column, $value);
+        return $this;
+    }
     public function sort(string $column, bool $desc = false) : Repository
     {
         $this->repository->sort($column, $desc);
