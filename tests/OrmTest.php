@@ -134,7 +134,7 @@ class OrmTest extends \PHPUnit_Framework_TestCase
 
         $resig = new Author();
         $resig->name = 'John Resig';
-        $author->add($resig);
+        $author->append($resig);
 
         $this->assertEquals($author[4]->name, 'John Resig');
         $this->assertEquals(self::$db->one('SELECT name FROM author WHERE id = 5'), 'John Resig');
@@ -190,8 +190,8 @@ class OrmTest extends \PHPUnit_Framework_TestCase
         $author->name = "Георги Иванов";
         $author->book = [ $book ];
         $book->author = $author;
-        $manager->book()->add($book);
-        $manager->author()->add($author);
+        $manager->book()->append($book);
+        $manager->author()->append($author);
         $manager->save();
         $this->assertEquals('Георги Иванов', $manager->author()[3]->name);
         $this->assertEquals('Георги Иванов', $manager->book()[1]->author->name);

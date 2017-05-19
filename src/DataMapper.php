@@ -38,5 +38,5 @@ interface DataMapper
      * @param bool $relations should the 1 end of relations be included, defaults to `true`
      * @return array
      */
-    public function toArray($entity) : array;
+    public function toArray($entity, bool $relations = true) : array;
 }

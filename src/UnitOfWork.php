@@ -5,9 +5,9 @@ use vakata\database\DBInterface;
 
 class UnitOfWork
 {
-    const CLEAN = 0;
-    const DIRTY = 1;
-    const ADDED = 2;
+    const CLEAN   = 0;
+    const DIRTY   = 1;
+    const ADDED   = 2;
     const REMOVED = 3;
 
     /**
@@ -37,7 +37,7 @@ class UnitOfWork
     {
         foreach ($this->map as $hash => $data) {
             if ($data['state'] === static::CLEAN &&
-                $data['hash']  !== sha1(serialize($data['mapper']->toArray($data['entity'])))
+                $data['hash']  !== sha1(serialize($data['repository']->toArray($data['entity']))) // TODO
             ) {
                 $this->map[$hash]['state'] = static::DIRTY;
             }
@@ -54,21 +54,21 @@ class UnitOfWork
         return false;
     }
     /**
-     * Register an entity in the mapper (will be checked for changes when save is called)
+     * Register an entity in the unit (will be checked for changes when save is called)
      *
      * @param mixed $entity
-     * @param DataMapper $mapper the entity's mapper
+     * @param Repository $repository the entity's repository
      * @return string the entity's hash
      */
-    public function register($entity, DataMapper $mapper)
+    public function register($entity, Repository $repository)
     {
         $hash = $this->hash($entity);
         if (!isset($this->map[$hash])) {
             $this->map[$hash] = [
-                'hash'   => sha1(serialize($mapper->toArray($entity))),
-                'state'  => static::CLEAN,
-                'entity' => $entity,
-                'mapper' => $mapper
+                'hash'       => sha1(serialize($repository->toArray($entity))),
+                'state'      => static::CLEAN,
+                'entity'     => $entity,
+                'repository' => $repository
             ];
         }
         return $hash;
@@ -77,12 +77,12 @@ class UnitOfWork
      * Mark an entity as changed
      *
      * @param mixed $entity
-     * @param DataMapper $mapper the entity's hash
+     * @param Repository $repository the entity's repository
      * @return string the entity's hash
      */
-    public function change($entity, DataMapper $mapper)
+    public function change($entity, Repository $repository)
     {
-        $hash = $this->register($entity, $mapper);
+        $hash = $this->register($entity, $repository);
         $this->map[$hash]['state'] = static::DIRTY;
         return $hash;
     }
@@ -90,12 +90,12 @@ class UnitOfWork
      * Add a new entity (mark for insertion)
      *
      * @param mixed $entity
-     * @param DataMapper $mapper the entity's mapper
+     * @param Repository $repository the entity's repository
      * @return string the entity's hash
      */
-    public function add($entity, DataMapper $mapper)
+    public function append($entity, Repository $repository)
     {
-        $hash = $this->register($entity, $mapper);
+        $hash = $this->register($entity, $repository);
         $this->map[$hash]['state'] = static::ADDED;
         return $hash;
     }
@@ -103,12 +103,12 @@ class UnitOfWork
      * Mark an entity for removal
      *
      * @param mixed $entity
-     * @param DataMapper $mapper the entity's mapper
+     * @param Repository $repository the entity's repository
      * @return string the entity's hash
      */
-    public function remove($entity, DataMapper $mapper)
+    public function remove($entity, Repository $repository)
     {
-        $hash = $this->register($entity, $mapper);
+        $hash = $this->register($entity, $repository);
         $this->map[$hash]['state'] = static::REMOVED;
         return $hash;
     }
@@ -124,21 +124,21 @@ class UnitOfWork
             while ($this->isDirty()) {
                 foreach ($this->map as $hash => $data) {
                     if ($data['state'] === static::ADDED) {
-                        $data['mapper']->insert($data['entity']);
-                        $this->map[$hash]['hash'] = sha1(serialize($data['mapper']->toArray($data['entity'])));
+                        $data['repository']->append($data['entity']);
+                        $this->map[$hash]['hash'] = sha1(serialize($data['repository']->toArray($data['entity'])));
                         $this->map[$hash]['state'] = static::CLEAN;
                     }
                 }
                 foreach ($this->map as $hash => $data) {
                     if ($data['state'] === static::DIRTY) {
-                        $data['mapper']->update($data['entity']);
-                        $this->map[$hash]['hash'] = sha1(serialize($data['mapper']->toArray($data['entity'])));
+                        $data['repository']->change($data['entity']);
+                        $this->map[$hash]['hash'] = sha1(serialize($data['repository']->toArray($data['entity'])));
                         $this->map[$hash]['state'] = static::CLEAN;
                     }
                 }
                 foreach ($this->map as $hash => $data) {
                     if ($data['state'] === static::REMOVED) {
-                        $data['mapper']->delete($data['entity']);
+                        $data['repository']->remove($data['entity']);
                         unset($this->map[$hash]);
                     }
                 }

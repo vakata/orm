@@ -1,7 +1,7 @@
 <?php
 namespace vakata\orm;
 
-class UnitOfWorkRepository implements SearchableRepository
+class UnitOfWorkRepository implements Repository
 {
     protected $uow;
     protected $repository;
@@ -42,14 +42,19 @@ class UnitOfWorkRepository implements SearchableRepository
         return $this;
     }
 
-    public function add($entity) : Repository
+    public function append($entity) : Repository
     {
-        $this->uow->add($entity, $this->repository->getMapper());
+        $this->uow->append($entity, $this->repository);
+        return $this;
+    }
+    public function change($entity) : Repository
+    {
+        $this->uow->change($entity, $this->repository);
         return $this;
     }
     public function remove($entity) : Repository
     {
-        $this->uow->remove($entity, $this->repository->getMapper());
+        $this->uow->remove($entity, $this->repository);
         return $this;
     }
 
@@ -57,7 +62,7 @@ class UnitOfWorkRepository implements SearchableRepository
     {
         $data = $this->repository->current();
         if ($data !== null) {
-            $this->uow->register($data, $this->repository->getMapper());
+            $this->uow->register($data, $this->repository);
         }
         return $data;
     }
@@ -65,7 +70,7 @@ class UnitOfWorkRepository implements SearchableRepository
     {
         $data = $this->repository->offsetGet($offset);
         if ($data !== null) {
-            $this->uow->register($data, $this->repository->getMapper());
+            $this->uow->register($data, $this->repository);
         }
         return $data;
     }
@@ -92,34 +97,35 @@ class UnitOfWorkRepository implements SearchableRepository
     }
     public function offsetUnset($offset)
     {
-        return $this->repository->offsetUnset($offset);
+        return $this->remove($this->offsetGet($offset));
     }
     public function offsetSet($offset, $value)
     {
-        return $this->repository->offsetSet($offset, $value);
+        if ($offset !== null) {
+            throw new \BadMethodCallException();
+        }
+        return $this->append($value);
     }
     public function count()
     {
         return $this->repository->count();
     }
 
-    public function getMapper() : DataMapper
-    {
-        return $this->repository->getMapper();
-    }
     public function isConsumed() : bool
     {
-        return $this->consumed;
+        return $this->repository->isConsumed();
     }
     public function isModified() : bool
     {
-        return $this->modified;
+        return $this->repository->isModified();
     }
-    public function search(string $q) : SearchableRepository
+    public function toArray($entity) : array
     {
-        if (!($this->repository instanceof SearchableRepository)) {
-            throw new \BadMethodCallException();
-        }
-        return $this->repository->search($q);
+        return $this->repository->toArray($entity);
+    }
+    public function search(string $q) : Repository
+    {
+        $this->repository->search($q);
+        return $this;
     }
 }

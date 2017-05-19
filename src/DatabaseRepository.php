@@ -3,7 +3,7 @@ namespace vakata\orm;
 
 use \vakata\database\schema\TableQuery;
 
-class DatabaseRepository implements SearchableRepository
+class DatabaseRepository implements Repository
 {
     /**
      * @var DataMapper
@@ -87,10 +87,16 @@ class DatabaseRepository implements SearchableRepository
         return $this->mapper->entity($data);
     }
 
-    public function add($entity) : Repository
+    public function append($entity) : Repository
     {
         $this->modified = true;
         $this->mapper->insert($entity);
+        return $this;
+    }
+    public function change($entity) : Repository
+    {
+        $this->modified = true;
+        $this->mapper->update($entity);
         return $this;
     }
     public function remove($entity) : Repository
@@ -129,13 +135,9 @@ class DatabaseRepository implements SearchableRepository
         if ($offset !== null) {
             throw new \BadMethodCallException();
         }
-        $this->add($value);
+        $this->append($value);
     }
 
-    public function getMapper() : DataMapper
-    {
-        return $this->mapper;
-    }
     public function isConsumed() : bool
     {
         return $this->consumed;
@@ -145,7 +147,12 @@ class DatabaseRepository implements SearchableRepository
         return $this->modified;
     }
 
-    public function search(string $q) : SearchableRepository
+    public function toArray($entity) : array
+    {
+        return $this->mapper->toArray($entity, false);
+    }
+
+    public function search(string $q) : Repository
     {
         $sql = [];
         $par = [];
