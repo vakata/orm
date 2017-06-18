@@ -7,7 +7,6 @@ use vakata\database\DBInterface;
  * A generic class mapping an instance creation function to a table in the DB.
  */
 // NOTICE: if not using Unit of Work toArray() and updatePivots() may fail if saving is not in the right order!!!
-// TODO: lazy relations are needed in entity()
 class GenericDataMapper implements DataMapper
 {
     protected $manager;
@@ -107,8 +106,13 @@ class GenericDataMapper implements DataMapper
                 if ($relation->many) {
                     $entity->{$name} = $query;
                 } else {
-                    // TODO: lazy property
-                    $entity->{$name} = $query[0];
+                    if ($entity instanceof LazyLoadable) {
+                        $entity->lazyProperty($name, function () use ($query) {
+                            return $query[0];
+                        });
+                    } else {
+                        $entity->{$name} = $query[0];
+                    }
                 }
             }
         }
