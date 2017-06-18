@@ -318,7 +318,7 @@ class GenericDataMapper implements DataMapper
      */
     public function insert($entity) : array
     {
-        $data = $this->toArray($entity);
+        $data = $this->toArray($entity, false);
         $pkey = $this->db->table($this->table)->insert($data);
         $this->populate($entity, $pkey);
         $this->map[$this->hash($entity)] = $entity;
@@ -346,7 +346,7 @@ class GenericDataMapper implements DataMapper
         foreach ($this->definition->getPrimaryKey() as $field) {
             $query->filter($field, $pkey[$field] ?? null);
         }
-        $data = $this->toArray($entity);
+        $data = $this->toArray($entity, false);
         $updatedCount = $query->update($data);
         // check for primary key changes
         $newHash = $this->hash($entity);
