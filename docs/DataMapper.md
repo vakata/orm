@@ -1,113 +1,146 @@
-# vakata\orm\DataMapper
+# vakata\orm\DataMapper  
+
+
+
+
+
 
 
 ## Methods
 
 | Name | Description |
 |------|-------------|
-|[entity](#vakata\orm\datamapperentity)|Get an entity from an array of fields|
-|[insert](#vakata\orm\datamapperinsert)|Insert an entity, returning the primary key fields and their value|
-|[update](#vakata\orm\datamapperupdate)|Update an entity|
-|[delete](#vakata\orm\datamapperdelete)|Delete an entity|
-|[toArray](#vakata\orm\datamappertoarray)|Convert an entity to an array of fields, optionally including relation fields.|
-
----
+|[delete](#datamapperdelete)|Delete an entity|
+|[entity](#datamapperentity)|Get an entity from an array of fields|
+|[insert](#datamapperinsert)|Insert an entity, returning the primary key fields and their value|
+|[toArray](#datamappertoarray)|Convert an entity to an array of fields, optionally including relation fields.|
+|[update](#datamapperupdate)|Update an entity|
 
 
 
-### vakata\orm\DataMapper::entity
-Get an entity from an array of fields  
 
+### DataMapper::delete  
 
-```php
-public function entity (  
-    array $row  
-) : mixed    
-```
-
-|  | Type | Description |
-|-----|-----|-----|
-| `$row` | `array` |  |
-|  |  |  |
-| `return` | `mixed` |  |
-
----
-
-
-### vakata\orm\DataMapper::insert
-Insert an entity, returning the primary key fields and their value  
-
+**Description**
 
 ```php
-public function insert (  
-    mixed $entity  
-) : array    
+public delete (mixed $entity)
 ```
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$entity` | `mixed` |  |
-|  |  |  |
-| `return` | `array` | a key value map of the primary key columns |
+Delete an entity 
 
----
+ 
+
+**Parameters**
+
+* `(mixed) $entity`
+
+**Return Values**
+
+`array`
+
+> a key value map of the primary key columns  
 
 
-### vakata\orm\DataMapper::update
-Update an entity  
 
+
+### DataMapper::entity  
+
+**Description**
 
 ```php
-public function update (  
-    mixed $entity  
-) : array    
+public entity (array $row)
 ```
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$entity` | `mixed` |  |
-|  |  |  |
-| `return` | `array` | a key value map of the primary key columns |
+Get an entity from an array of fields 
 
----
+ 
+
+**Parameters**
+
+* `(array) $row`
+
+**Return Values**
+
+`mixed`
 
 
-### vakata\orm\DataMapper::delete
-Delete an entity  
 
+
+
+### DataMapper::insert  
+
+**Description**
 
 ```php
-public function delete (  
-    mixed $entity  
-) : array    
+public insert (mixed $entity)
 ```
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$entity` | `mixed` |  |
-|  |  |  |
-| `return` | `array` | a key value map of the primary key columns |
+Insert an entity, returning the primary key fields and their value 
 
----
+ 
+
+**Parameters**
+
+* `(mixed) $entity`
+
+**Return Values**
+
+`array`
+
+> a key value map of the primary key columns  
 
 
-### vakata\orm\DataMapper::toArray
-Convert an entity to an array of fields, optionally including relation fields.  
 
+
+### DataMapper::toArray  
+
+**Description**
 
 ```php
-public function toArray (  
-    mixed $entity,  
-    bool $relations  
-) : array    
+public toArray (mixed $entity, bool $relations)
 ```
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$entity` | `mixed` | the entity to convert |
-| `$relations` | `bool` | should the 1 end of relations be included, defaults to `true` |
-|  |  |  |
-| `return` | `array` |  |
+Convert an entity to an array of fields, optionally including relation fields. 
 
----
+ 
+
+**Parameters**
+
+* `(mixed) $entity`
+: the entity to convert  
+* `(bool) $relations`
+: should the 1 end of relations be included, defaults to `true`  
+
+**Return Values**
+
+`array`
+
+
+
+
+
+### DataMapper::update  
+
+**Description**
+
+```php
+public update (mixed $entity)
+```
+
+Update an entity 
+
+ 
+
+**Parameters**
+
+* `(mixed) $entity`
+
+**Return Values**
+
+`array`
+
+> a key value map of the primary key columns  
+
+
 

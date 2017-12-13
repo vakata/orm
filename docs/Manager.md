@@ -1,175 +1,245 @@
-# vakata\orm\Manager
+# vakata\orm\Manager  
+
 Manager ORM class
+
+
+
+
 
 ## Methods
 
 | Name | Description |
 |------|-------------|
-|[__construct](#vakata\orm\manager__construct)|Create an instance|
-|[registerMapper](#vakata\orm\managerregistermapper)|Add a mapper for a specific table|
-|[registerGenericMapper](#vakata\orm\managerregistergenericmapper)|Add a generic mapper for a table name|
-|[registerGenericMapperWithClassName](#vakata\orm\managerregistergenericmapperwithclassname)|Add a generic mapper for a table name using a class name|
-|[hasMapper](#vakata\orm\managerhasmapper)|Is a mapper available for a given table name|
-|[getMapper](#vakata\orm\managergetmapper)|Get a mapper for a table name, if a mapper is not found a new generic mapper is registered using \StdClass|
-|[fromQuery](#vakata\orm\managerfromquery)|Get a repository from a table query|
-|[fromTable](#vakata\orm\managerfromtable)|Get a repository for a given table name|
-
----
-
+|[__call](#manager__call)||
+|[__construct](#manager__construct)|Create an instance|
+|[fromQuery](#managerfromquery)|Get a repository from a table query|
+|[fromTable](#managerfromtable)|Get a repository for a given table name|
+|[getMapper](#managergetmapper)|Get a mapper for a table name, if a mapper is not found a new generic mapper is registered using \StdClass|
+|[hasMapper](#managerhasmapper)|Is a mapper available for a given table name|
+|[registerGenericMapper](#managerregistergenericmapper)|Add a generic mapper for a table name|
+|[registerGenericMapperWithClassName](#managerregistergenericmapperwithclassname)|Add a generic mapper for a table name using a class name|
+|[registerMapper](#managerregistermapper)|Add a mapper for a specific table|
 
 
-### vakata\orm\Manager::__construct
-Create an instance  
 
 
-```php
-public function __construct (  
-    \DBInterface $db  
-)   
-```
+### Manager::__call  
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$db` | `\DBInterface` | the database schema |
-
----
-
-
-### vakata\orm\Manager::registerMapper
-Add a mapper for a specific table  
-
+**Description**
 
 ```php
-public function registerMapper (  
-    string $table,  
-    \DataMapper $mapper  
-) : $this    
+public __call (void)
 ```
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$table` | `string` | the table name |
-| `$mapper` | `\DataMapper` | the mapper instance |
-|  |  |  |
-| `return` | `$this` |  |
+ 
 
----
+ 
+
+**Parameters**
+
+`This function has no parameters.`
+
+**Return Values**
 
 
-### vakata\orm\Manager::registerGenericMapper
-Add a generic mapper for a table name  
 
+
+### Manager::__construct  
+
+**Description**
 
 ```php
-public function registerGenericMapper (  
-    string $table,  
-    callable $creator  
-) : $this    
+public __construct (\DBInterface $db)
 ```
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$table` | `string` | the table name |
-| `$creator` | `callable` | a callable to invoke when a new instance is needed |
-|  |  |  |
-| `return` | `$this` |  |
+Create an instance 
 
----
+ 
+
+**Parameters**
+
+* `(\DBInterface) $db`
+: the database schema  
+
+**Return Values**
 
 
-### vakata\orm\Manager::registerGenericMapperWithClassName
-Add a generic mapper for a table name using a class name  
 
+
+### Manager::fromQuery  
+
+**Description**
 
 ```php
-public function registerGenericMapperWithClassName (  
-    string $table,  
-    string $class  
-) : $this    
+public fromQuery (\TableQuery $query)
 ```
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$table` | `string` | the table name |
-| `$class` | `string` | the class name to use when creating new instances |
-|  |  |  |
-| `return` | `$this` |  |
+Get a repository from a table query 
 
----
+ 
+
+**Parameters**
+
+* `(\TableQuery) $query`
+
+**Return Values**
+
+`\Repository`
 
 
-### vakata\orm\Manager::hasMapper
-Is a mapper available for a given table name  
 
+
+
+### Manager::fromTable  
+
+**Description**
 
 ```php
-public function hasMapper (  
-    string $table  
-) : boolean    
+public fromTable (string $table)
 ```
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$table` | `string` | the table name |
-|  |  |  |
-| `return` | `boolean` |  |
+Get a repository for a given table name 
 
----
+ 
+
+**Parameters**
+
+* `(string) $table`
+
+**Return Values**
+
+`\Repository`
 
 
-### vakata\orm\Manager::getMapper
-Get a mapper for a table name, if a mapper is not found a new generic mapper is registered using \StdClass  
 
+
+
+### Manager::getMapper  
+
+**Description**
 
 ```php
-public function getMapper (  
-    string $table  
-) : \DataMapper    
+public getMapper (string $table)
 ```
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$table` | `string` |  |
-|  |  |  |
-| `return` | `\DataMapper` |  |
+Get a mapper for a table name, if a mapper is not found a new generic mapper is registered using \StdClass 
 
----
+ 
+
+**Parameters**
+
+* `(string) $table`
+
+**Return Values**
+
+`\DataMapper`
 
 
-### vakata\orm\Manager::fromQuery
-Get a repository from a table query  
 
+
+
+### Manager::hasMapper  
+
+**Description**
 
 ```php
-public function fromQuery (  
-    \TableQuery $query  
-) : \Repository    
+public hasMapper (string $table)
 ```
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$query` | `\TableQuery` |  |
-|  |  |  |
-| `return` | `\Repository` |  |
+Is a mapper available for a given table name 
 
----
+ 
+
+**Parameters**
+
+* `(string) $table`
+: the table name  
+
+**Return Values**
+
+`boolean`
 
 
-### vakata\orm\Manager::fromTable
-Get a repository for a given table name  
 
+
+
+### Manager::registerGenericMapper  
+
+**Description**
 
 ```php
-public function fromTable (  
-    string $table  
-) : \Repository    
+public registerGenericMapper (string $table, callable $creator)
 ```
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$table` | `string` |  |
-|  |  |  |
-| `return` | `\Repository` |  |
+Add a generic mapper for a table name 
 
----
+ 
+
+**Parameters**
+
+* `(string) $table`
+: the table name  
+* `(callable) $creator`
+: a callable to invoke when a new instance is needed  
+
+**Return Values**
+
+`$this`
+
+
+
+
+
+### Manager::registerGenericMapperWithClassName  
+
+**Description**
+
+```php
+public registerGenericMapperWithClassName (string $table, string $class)
+```
+
+Add a generic mapper for a table name using a class name 
+
+ 
+
+**Parameters**
+
+* `(string) $table`
+: the table name  
+* `(string) $class`
+: the class name to use when creating new instances  
+
+**Return Values**
+
+`$this`
+
+
+
+
+
+### Manager::registerMapper  
+
+**Description**
+
+```php
+public registerMapper (string $table, \DataMapper $mapper)
+```
+
+Add a mapper for a specific table 
+
+ 
+
+**Parameters**
+
+* `(string) $table`
+: the table name  
+* `(\DataMapper) $mapper`
+: the mapper instance  
+
+**Return Values**
+
+`$this`
+
+
+
 

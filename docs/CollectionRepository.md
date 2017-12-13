@@ -1,9 +1,9 @@
-# vakata\orm\Repository  
+# vakata\orm\CollectionRepository  
 
 
 
 ## Implements:
-Iterator, Traversable, ArrayAccess, Countable
+vakata\orm\Repository, Countable, ArrayAccess, Traversable, Iterator
 
 
 
@@ -11,34 +11,78 @@ Iterator, Traversable, ArrayAccess, Countable
 
 | Name | Description |
 |------|-------------|
-|[append](#repositoryappend)||
-|[change](#repositorychange)||
-|[count](#repositorycount)||
-|[current](#repositorycurrent)||
-|[filter](#repositoryfilter)||
-|[find](#repositoryfind)||
-|[isConsumed](#repositoryisconsumed)||
-|[isModified](#repositoryismodified)||
-|[key](#repositorykey)||
-|[limit](#repositorylimit)||
-|[next](#repositorynext)||
-|[offsetExists](#repositoryoffsetexists)||
-|[offsetGet](#repositoryoffsetget)||
-|[offsetSet](#repositoryoffsetset)||
-|[offsetUnset](#repositoryoffsetunset)||
-|[reject](#repositoryreject)||
-|[remove](#repositoryremove)||
-|[reset](#repositoryreset)||
-|[rewind](#repositoryrewind)||
-|[search](#repositorysearch)||
-|[sort](#repositorysort)||
-|[toArray](#repositorytoarray)||
-|[valid](#repositoryvalid)||
+|[__clone](#collectionrepository__clone)||
+|[__construct](#collectionrepository__construct)||
+|[append](#collectionrepositoryappend)||
+|[change](#collectionrepositorychange)||
+|[count](#collectionrepositorycount)||
+|[current](#collectionrepositorycurrent)||
+|[filter](#collectionrepositoryfilter)||
+|[find](#collectionrepositoryfind)||
+|[isConsumed](#collectionrepositoryisconsumed)||
+|[isModified](#collectionrepositoryismodified)||
+|[key](#collectionrepositorykey)||
+|[limit](#collectionrepositorylimit)||
+|[next](#collectionrepositorynext)||
+|[offsetExists](#collectionrepositoryoffsetexists)||
+|[offsetGet](#collectionrepositoryoffsetget)||
+|[offsetSet](#collectionrepositoryoffsetset)||
+|[offsetUnset](#collectionrepositoryoffsetunset)||
+|[reject](#collectionrepositoryreject)||
+|[remove](#collectionrepositoryremove)||
+|[reset](#collectionrepositoryreset)||
+|[rewind](#collectionrepositoryrewind)||
+|[search](#collectionrepositorysearch)||
+|[sort](#collectionrepositorysort)||
+|[toArray](#collectionrepositorytoarray)||
+|[valid](#collectionrepositoryvalid)||
 
 
 
 
-### Repository::append  
+### CollectionRepository::__clone  
+
+**Description**
+
+```php
+public __clone (void)
+```
+
+ 
+
+ 
+
+**Parameters**
+
+`This function has no parameters.`
+
+**Return Values**
+
+
+
+
+### CollectionRepository::__construct  
+
+**Description**
+
+```php
+public __construct (void)
+```
+
+ 
+
+ 
+
+**Parameters**
+
+`This function has no parameters.`
+
+**Return Values**
+
+
+
+
+### CollectionRepository::append  
 
 **Description**
 
@@ -59,7 +103,7 @@ public append (void)
 
 
 
-### Repository::change  
+### CollectionRepository::change  
 
 **Description**
 
@@ -80,7 +124,7 @@ public change (void)
 
 
 
-### Repository::count  
+### CollectionRepository::count  
 
 **Description**
 
@@ -101,7 +145,7 @@ public count (void)
 
 
 
-### Repository::current  
+### CollectionRepository::current  
 
 **Description**
 
@@ -122,7 +166,7 @@ public current (void)
 
 
 
-### Repository::filter  
+### CollectionRepository::filter  
 
 **Description**
 
@@ -143,7 +187,7 @@ public filter (void)
 
 
 
-### Repository::find  
+### CollectionRepository::find  
 
 **Description**
 
@@ -164,7 +208,7 @@ public find (void)
 
 
 
-### Repository::isConsumed  
+### CollectionRepository::isConsumed  
 
 **Description**
 
@@ -185,7 +229,7 @@ public isConsumed (void)
 
 
 
-### Repository::isModified  
+### CollectionRepository::isModified  
 
 **Description**
 
@@ -206,7 +250,7 @@ public isModified (void)
 
 
 
-### Repository::key  
+### CollectionRepository::key  
 
 **Description**
 
@@ -227,7 +271,7 @@ public key (void)
 
 
 
-### Repository::limit  
+### CollectionRepository::limit  
 
 **Description**
 
@@ -248,7 +292,7 @@ public limit (void)
 
 
 
-### Repository::next  
+### CollectionRepository::next  
 
 **Description**
 
@@ -269,7 +313,7 @@ public next (void)
 
 
 
-### Repository::offsetExists  
+### CollectionRepository::offsetExists  
 
 **Description**
 
@@ -290,7 +334,7 @@ public offsetExists (void)
 
 
 
-### Repository::offsetGet  
+### CollectionRepository::offsetGet  
 
 **Description**
 
@@ -311,7 +355,7 @@ public offsetGet (void)
 
 
 
-### Repository::offsetSet  
+### CollectionRepository::offsetSet  
 
 **Description**
 
@@ -332,7 +376,7 @@ public offsetSet (void)
 
 
 
-### Repository::offsetUnset  
+### CollectionRepository::offsetUnset  
 
 **Description**
 
@@ -353,7 +397,7 @@ public offsetUnset (void)
 
 
 
-### Repository::reject  
+### CollectionRepository::reject  
 
 **Description**
 
@@ -374,7 +418,7 @@ public reject (void)
 
 
 
-### Repository::remove  
+### CollectionRepository::remove  
 
 **Description**
 
@@ -395,7 +439,7 @@ public remove (void)
 
 
 
-### Repository::reset  
+### CollectionRepository::reset  
 
 **Description**
 
@@ -416,7 +460,7 @@ public reset (void)
 
 
 
-### Repository::rewind  
+### CollectionRepository::rewind  
 
 **Description**
 
@@ -437,7 +481,7 @@ public rewind (void)
 
 
 
-### Repository::search  
+### CollectionRepository::search  
 
 **Description**
 
@@ -458,7 +502,7 @@ public search (void)
 
 
 
-### Repository::sort  
+### CollectionRepository::sort  
 
 **Description**
 
@@ -479,7 +523,7 @@ public sort (void)
 
 
 
-### Repository::toArray  
+### CollectionRepository::toArray  
 
 **Description**
 
@@ -500,7 +544,7 @@ public toArray (void)
 
 
 
-### Repository::valid  
+### CollectionRepository::valid  
 
 **Description**
 

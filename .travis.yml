@@ -18,11 +18,8 @@ before_install:
   - mysql -e "create database IF NOT EXISTS test;" -uroot
 
 script:
-  - vendor/bin/phpunit
+  - vendor/bin/phpunit --coverage-clover=coverage.clover
 
 after_script:
-  - vendor/bin/test-reporter
-
-addons:
-  code_climate:
-    repo_token: 8d4f6928f441c9b20a1cf458c7f54fa20f087c78ae3a49252a823f7243d6f086
+    - bash -c 'wget https://scrutinizer-ci.com/ocular.phar'
+    - bash -c 'php ocular.phar code-coverage:upload --format=php-clover coverage.clover'

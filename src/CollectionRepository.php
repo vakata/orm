@@ -168,7 +168,7 @@ class CollectionRepository implements Repository
         return [];
     }
 
-    public function search(string $q) : SearchableRepository
+    public function search(string $q) : Repository
     {
         $this->collection = $this->collection->filter($this->search);
         return $this;

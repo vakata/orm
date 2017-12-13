@@ -1,137 +1,176 @@
-# vakata\orm\GenericDataMapper
+# vakata\orm\GenericDataMapper  
+
 A generic class mapping an instance creation function to a table in the DB.
+
+## Implements:
+vakata\orm\DataMapper
+
+
 
 ## Methods
 
 | Name | Description |
 |------|-------------|
-|[__construct](#vakata\orm\genericdatamapper__construct)|Create an instance|
-|[toArray](#vakata\orm\genericdatamappertoarray)|Convert an entity to an array of fields, optionally including relation fields.|
-|[entity](#vakata\orm\genericdatamapperentity)|Get an entity from an array of fields|
-|[insert](#vakata\orm\genericdatamapperinsert)|Insert an entity, returning the primary key fields and their value|
-|[update](#vakata\orm\genericdatamapperupdate)|Update an entity|
-|[delete](#vakata\orm\genericdatamapperdelete)|Delete an entity|
-
----
+|[__construct](#genericdatamapper__construct)|Create an instance|
+|[delete](#genericdatamapperdelete)|Delete an entity|
+|[entity](#genericdatamapperentity)|Get an entity from an array of fields|
+|[insert](#genericdatamapperinsert)|Insert an entity, returning the primary key fields and their value|
+|[toArray](#genericdatamappertoarray)|Convert an entity to an array of fields, optionally including relation fields.|
+|[update](#genericdatamapperupdate)|Update an entity|
 
 
 
-### vakata\orm\GenericDataMapper::__construct
-Create an instance  
 
+### GenericDataMapper::__construct  
 
-```php
-public function __construct (  
-    \Manager $manager,  
-    \DBInterface $db,  
-    string $table,  
-    callable $create  
-)   
-```
-
-|  | Type | Description |
-|-----|-----|-----|
-| `$manager` | `\Manager` | the manager object |
-| `$db` | `\DBInterface` | the database access object |
-| `$table` | `string` | the table name to query |
-| `$create` | `callable` | invoked with an array of fields when a new instance needs to be created |
-
----
-
-
-### vakata\orm\GenericDataMapper::toArray
-Convert an entity to an array of fields, optionally including relation fields.  
-
+**Description**
 
 ```php
-public function toArray (  
-    mixed $entity,  
-    bool $relations  
-) : array    
+public __construct (\Manager $manager, \DBInterface $db, string $table, callable $create)
 ```
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$entity` | `mixed` | the entity to convert |
-| `$relations` | `bool` | should the 1 end of relations be included, defaults to `true` |
-|  |  |  |
-| `return` | `array` |  |
+Create an instance 
 
----
+ 
+
+**Parameters**
+
+* `(\Manager) $manager`
+: the manager object  
+* `(\DBInterface) $db`
+: the database access object  
+* `(string) $table`
+: the table name to query  
+* `(callable) $create`
+: invoked with an array of fields when a new instance needs to be created  
+
+**Return Values**
 
 
-### vakata\orm\GenericDataMapper::entity
-Get an entity from an array of fields  
 
+
+### GenericDataMapper::delete  
+
+**Description**
 
 ```php
-public function entity (  
-    array $row  
-) : mixed    
+public delete (mixed $entity)
 ```
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$row` | `array` |  |
-|  |  |  |
-| `return` | `mixed` |  |
+Delete an entity 
 
----
+ 
+
+**Parameters**
+
+* `(mixed) $entity`
+
+**Return Values**
+
+`int`
+
+> the number of deleted rows  
 
 
-### vakata\orm\GenericDataMapper::insert
-Insert an entity, returning the primary key fields and their value  
 
+
+### GenericDataMapper::entity  
+
+**Description**
 
 ```php
-public function insert (  
-    mixed $entity  
-) : array    
+public entity (array $row)
 ```
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$entity` | `mixed` |  |
-|  |  |  |
-| `return` | `array` | a key value map of the primary key columns |
+Get an entity from an array of fields 
 
----
+ 
+
+**Parameters**
+
+* `(array) $row`
+
+**Return Values**
+
+`mixed`
 
 
-### vakata\orm\GenericDataMapper::update
-Update an entity  
 
+
+
+### GenericDataMapper::insert  
+
+**Description**
 
 ```php
-public function update (  
-    mixed $entity  
-) : int    
+public insert (mixed $entity)
 ```
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$entity` | `mixed` |  |
-|  |  |  |
-| `return` | `int` | the number of affected rows |
+Insert an entity, returning the primary key fields and their value 
 
----
+ 
+
+**Parameters**
+
+* `(mixed) $entity`
+
+**Return Values**
+
+`array`
+
+> a key value map of the primary key columns  
 
 
-### vakata\orm\GenericDataMapper::delete
-Delete an entity  
 
+
+### GenericDataMapper::toArray  
+
+**Description**
 
 ```php
-public function delete (  
-    mixed $entity  
-) : int    
+public toArray (mixed $entity, bool $relations)
 ```
 
-|  | Type | Description |
-|-----|-----|-----|
-| `$entity` | `mixed` |  |
-|  |  |  |
-| `return` | `int` | the number of deleted rows |
+Convert an entity to an array of fields, optionally including relation fields. 
 
----
+ 
+
+**Parameters**
+
+* `(mixed) $entity`
+: the entity to convert  
+* `(bool) $relations`
+: should the 1 end of relations be included, defaults to `true`  
+
+**Return Values**
+
+`array`
+
+
+
+
+
+### GenericDataMapper::update  
+
+**Description**
+
+```php
+public update (mixed $entity)
+```
+
+Update an entity 
+
+ 
+
+**Parameters**
+
+* `(mixed) $entity`
+
+**Return Values**
+
+`int`
+
+> the number of affected rows  
+
+
 
