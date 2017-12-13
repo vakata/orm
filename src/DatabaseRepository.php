@@ -112,11 +112,11 @@ class DatabaseRepository implements Repository
     }
     public function rewind()
     {
-        return $this->query->getIterator()->rewind();
+        $this->query->getIterator()->rewind();
     }
     public function next()
     {
-        return $this->query->getIterator()->next();
+        $this->query->getIterator()->next();
     }
     public function valid()
     {

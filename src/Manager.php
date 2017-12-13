@@ -59,7 +59,7 @@ class Manager
      */
     public function registerGenericMapperWithClassName(string $table, string $class)
     {
-        return $this->registerGenericMapper($table, function (array $data = []) use ($class) {
+        return $this->registerGenericMapper($table, function () use ($class) {
             return new $class;
         });
     }
@@ -82,7 +82,7 @@ class Manager
     public function getMapper(string $table)
     {
         if (!isset($this->map[$table])) {
-            $this->registerGenericMapper($table, function (array $data = []) {
+            $this->registerGenericMapper($table, function () {
                 return new class() extends \StdClass implements LazyLoadable {
                     use LazyLoad;
                 };

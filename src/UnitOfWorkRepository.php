@@ -81,11 +81,11 @@ class UnitOfWorkRepository implements Repository
     }
     public function rewind()
     {
-        return $this->repository->rewind();
+        $this->repository->rewind();
     }
     public function next()
     {
-        return $this->repository->next();
+        $this->repository->next();
     }
     public function valid()
     {
@@ -97,14 +97,14 @@ class UnitOfWorkRepository implements Repository
     }
     public function offsetUnset($offset)
     {
-        return $this->remove($this->offsetGet($offset));
+        $this->remove($this->offsetGet($offset));
     }
     public function offsetSet($offset, $value)
     {
         if ($offset !== null) {
             throw new \BadMethodCallException();
         }
-        return $this->append($value);
+        $this->append($value);
     }
     public function count()
     {

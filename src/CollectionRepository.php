@@ -20,14 +20,22 @@ class CollectionRepository implements Repository
     /**
      * @var callable
      */
-    protected $search = null;
+    protected $searching = null;
+    /**
+     * @var bool
+     */
+    protected $consumed = false;
+    /**
+     * @var bool
+     */
+    protected $modified = false;
 
-    public function __construct(Collection $collection, $id, callable $search = null)
+    public function __construct(Collection $collection, $id, callable $searching = null)
     {
         $this->collection = $collection;
         $this->original = clone $collection;
         $this->id = is_array($id) ? $id : [$id];
-        $this->search = $search ?? function ($v) {
+        $this->searching = $searching ?? function () {
             return true;
         };
     }
@@ -64,9 +72,13 @@ class CollectionRepository implements Repository
     }
     public function sort(string $column, bool $desc = false) : Repository
     {
-        $this->collection = $this->collection->sort(function ($a, $b) use ($column, $desc) {
-            $v1 = is_object($v) ? (isset($v->{$column}) ? $v->{$column} : null) : (isset($v[$column]) ? $v[$column] : null);
-            $v2 = is_object($v) ? (isset($v->{$column}) ? $v->{$column} : null) : (isset($v[$column]) ? $v[$column] : null);
+        $this->collection = $this->collection->sortBy(function ($a, $b) use ($column, $desc) {
+            $v1 = is_object($a) ?
+                (isset($a->{$column}) ? $a->{$column} : null) :
+                (isset($a[$column]) ? $a[$column] : null);
+            $v2 = is_object($b) ?
+                (isset($b->{$column}) ? $b->{$column} : null) :
+                (isset($b[$column]) ? $b[$column] : null);
             return $desc ? $v2 <=> $v1 : $v1 <=> $v2;
         });
         return $this;
@@ -129,11 +141,11 @@ class CollectionRepository implements Repository
     }
     public function rewind()
     {
-        return $this->collection->rewind();
+        $this->collection->rewind();
     }
     public function next()
     {
-        return $this->collection->next();
+        $this->collection->next();
     }
     public function valid()
     {
@@ -170,7 +182,9 @@ class CollectionRepository implements Repository
 
     public function search(string $q) : Repository
     {
-        $this->collection = $this->collection->filter($this->search);
+        $this->collection = $this->collection->filter(function ($v) use ($q) {
+            return call_user_func($this->searching, $v, $q);
+        });
         return $this;
     }
 }

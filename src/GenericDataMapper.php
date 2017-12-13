@@ -85,9 +85,9 @@ class GenericDataMapper implements DataMapper
                         }
                     }
                     if (!$nm) {
-                        $nm = $table->getName();
+                        $nm = $this->table->getName();
                         $relation->table->manyToMany(
-                            $table,
+                            $this->table,
                             $relation->pivot,
                             $nm,
                             array_flip($relation->keymap),
@@ -336,7 +336,7 @@ class GenericDataMapper implements DataMapper
     {
         // get the current primary key
         $hash = array_search($entity, $this->map, true);
-        if ($hash === null) {
+        if ($hash === null || $hash === false) {
             $hash = $this->hash($entity);
             $this->map[$hash] = $entity;
         }
@@ -347,7 +347,7 @@ class GenericDataMapper implements DataMapper
             $query->filter($field, $pkey[$field] ?? null);
         }
         $data = $this->toArray($entity, false);
-        $updatedCount = $query->update($data);
+        $query->update($data);
         // check for primary key changes
         $newHash = $this->hash($entity);
         if ($hash !== $newHash) {
@@ -368,7 +368,7 @@ class GenericDataMapper implements DataMapper
     {
         // get current primary key
         $hash = array_search($entity, $this->map, true);
-        if ($hash === null) {
+        if ($hash === null || $hash === false) {
             $hash = $this->hash($entity);
             $this->map[$hash] = $entity;
         }
@@ -378,7 +378,7 @@ class GenericDataMapper implements DataMapper
         foreach ($this->definition->getPrimaryKey() as $field) {
             $query->filter($field, $pkey[$field] ?? null);
         }
-        $deletedCount = $query->delete();
+        $query->delete();
         unset($this->map[$hash]);
         // delete data in related tables (probably not needed with cascade FK)
         $this->deleteRelations($entity, $pkey);
