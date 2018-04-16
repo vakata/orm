@@ -58,7 +58,7 @@ class DatabaseRepository implements Repository
     }
     public function limit(int $limit, int $offset = 0) : Repository
     {
-        $this->query->limit($limit, $offset);
+        $this->query->limit($limit, $offset, true);
         return $this;
     }
     public function count() : int
