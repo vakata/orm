@@ -164,6 +164,10 @@ class DatabaseRepository implements Repository
                 $sql[] = $table . '.' . $name . ' LIKE ?';
                 $par[] = '%' . str_replace(['%', '_'], ['\\%','\\_'], $q) . '%';
             }
+            if ($column->getBasicType() === 'int' && is_numeric($q)) {
+                $sql[] = $table . '.' . $name . ' = ?';
+                $par[] = $q;
+            }
         }
         if (count($sql)) {
             $this->query->where("(".implode(" OR ", $sql).")", $par);
