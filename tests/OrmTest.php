@@ -95,6 +95,10 @@ class OrmTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(count($manager->book()->filter('tag.name', 'Escarina')), 1);
         $this->assertEquals(count($manager->book()->filter('tag.name', 'Discworld')), 1);
         $this->assertEquals(count($manager->book()->filter('tag.name', 'None')), 0);
+        $this->assertEquals(count($manager->book()->any([['author.name', 'Terry Pratchett'],['author.name', 'Douglas Adams']])), 1);
+        $this->assertEquals(count($manager->book()->all([['author.name', 'Terry Pratchett'],['author.name', 'Douglas Adams']])), 0);
+        $this->assertEquals(count($manager->book()->all([['tag.name', 'Discworld'],['author.name', 'Douglas Adams']])), 0);
+        $this->assertEquals(count($manager->book()->any([['tag.name', 'Discworld'],['author.name', 'Douglas Adams']])), 1);
     }
 
     public function testReadLoop() {

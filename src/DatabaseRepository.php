@@ -41,6 +41,16 @@ class DatabaseRepository implements Repository
         }
         return $this->offsetGet(0);
     }
+    public function any(array $criteria) : Repository
+    {
+        $this->query->any($criteria);
+        return $this;
+    }
+    public function all(array $criteria) : Repository
+    {
+        $this->query->all($criteria);
+        return $this;
+    }
     public function filter(string $column, $value) : Repository
     {
         $this->query->filter($column, $value);

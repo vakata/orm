@@ -187,4 +187,27 @@ class CollectionRepository implements Repository
         });
         return $this;
     }
+
+    public function any(array $criteria) : Repository
+    {
+        $where = [];
+        foreach ($criteria as $row) {
+            $temp = [];
+            $temp[$row[0]] = $row[1];
+            $where[] = $temp;
+        }
+        $this->collection = $this->collection->whereAny($where);
+        return $this;
+    }
+    public function all(array $criteria) : Repository
+    {
+        $where = [];
+        foreach ($criteria as $row) {
+            $temp = [];
+            $temp[$row[0]] = $row[1];
+            $where[] = $temp;
+        }
+        $this->collection = $this->collection->whereAll($where);
+        return $this;
+    }
 }

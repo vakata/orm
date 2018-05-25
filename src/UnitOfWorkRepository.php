@@ -26,6 +26,16 @@ class UnitOfWorkRepository implements Repository
         $this->repository->reject($column, $value);
         return $this;
     }
+    public function any(array $criteria) : Repository
+    {
+        $this->repository->any($criteria);
+        return $this;
+    }
+    public function all(array $criteria) : Repository
+    {
+        $this->repository->all($criteria);
+        return $this;
+    }
     public function sort(string $column, bool $desc = false) : Repository
     {
         $this->repository->sort($column, $desc);

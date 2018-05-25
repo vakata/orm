@@ -4,6 +4,8 @@ namespace vakata\orm;
 interface Repository extends \Iterator, \ArrayAccess, \Countable
 {
     public function find($id);
+    public function any(array $criteria) : Repository;
+    public function all(array $criteria) : Repository;
     public function filter(string $column, $value) : Repository;
     public function reject(string $column, $value) : Repository;
     public function sort(string $column, bool $desc = false) : Repository;
